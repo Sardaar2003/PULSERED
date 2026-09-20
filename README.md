@@ -1,16 +1,157 @@
-# React + Vite
+# 🔴 PulseRed AI Suite
+> **Real-Time AI Social Intelligence & Reddit Brand Sentiment Engine**
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+PulseRed AI Suite is an enterprise-grade social intelligence platform that monitors, analyzes, and contextualizes Reddit discussions in real time. Powered by the **Prowlo Search API** and custom multi-term semantic aggregation pipelines, PulseRed transforms unstructured Reddit conversations into actionable brand intelligence, intent scoring, and competitor insights.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🏗️ Architecture Overview
 
-## React Compiler
+```
+                          ┌────────────────────────┐
+                          │    User Web Client     │
+                          │ (React 18 + Vite UI)   │
+                          └───────────┬────────────┘
+                                      │ REST API / Axios
+                                      ▼
+                          ┌────────────────────────┐
+                          │   Node.js / Express    │
+                          │     Backend Server     │
+                          └────┬──────────────┬────┘
+                               │              │
+        MongoDB Atlas / Local  │              │  Live Search Engine
+      ┌────────────────────────▼─┐          ┌─▼──────────────────────┐
+      │     Database Models      │          │     Prowlo Search      │
+      │  (User, SavedPost, etc.) │          │        API v1          │
+      └──────────────────────────┘          └────────────────────────┘
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+PulseRed operates as a **unified web application**:
+- **Frontend**: Built with React 18, Vite, and custom dark-theme CSS tokens with interactive glassmorphism components, dual layout toggle (Cards / Data Table), and the **Record Intelligence Inspector**.
+- **Backend**: Express REST API providing authentication (JWT), search proxying, in-memory caching, saved post persistence, and structured Winston audit logging.
+- **Production Mode**: Express serves the static Vite client build from `dist/` directly, enabling single-service deployment on platforms like Render.com.
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## ✨ Key Features
+
+- **🔍 Smart Multi-Term Prowlo Search Pipeline**
+  - Bypasses traditional Reddit 403 anti-bot restrictions using Prowlo API.
+  - Multi-stage fall-through pipeline: Primary phrase matching ➔ key-pair terms ➔ token aggregation & deduplication.
+  - In-memory 5-minute search caching for zero-latency query response.
+
+- **🌐 Dynamic Watcher Domain Switcher**
+  - Switch targeting context dynamically between brands (e.g., `AlertCareLine.com`, `SecurityTechDirect.com`, or custom entered domains).
+  - Recalculates relevance scoring and match metrics per target domain.
+
+- **📊 Record Intelligence Inspector ("Why Chosen?")**
+  - Deep-dive modal inspecting why specific Reddit posts were chosen.
+  - Visual metrics: Semantic match percentage, matched key terms, community metrics (upvotes, comments, subreddits), and sentiment breakdown.
+
+- **🔲 Dual Result Layout Switcher**
+  - **Cards View**: High-impact visual card layout with quick actions.
+  - **Data Table View**: Dense structured tabular view designed for analytics and bulk evaluation.
+
+- **⚡ Zero-Delay Instant Pagination**
+  - Slices cached multi-term results instantly without blocking network spinners.
+
+- **🔒 Enterprise Security & Auth**
+  - JWT token authentication with synchronous headers configuration.
+  - Master Admin account (`admin@pulsered.com`).
+  - Session eviction handling for expired tokens.
+
+---
+
+## 📁 Repository Structure
+
+```
+Akhil_Mohanty_Reddit_Test/
+├── server/
+│   ├── config/          # Database configuration (db.js)
+│   ├── middleware/      # Auth & error handling middlewares
+│   ├── models/          # Mongoose models (User.js, SavedPost.js, etc.)
+│   ├── routes/          # Express API routes (authRoutes.js, redditRoutes.js)
+│   ├── services/        # Prowlo API integration & search algorithms
+│   ├── logger.js        # Winston logging configuration
+│   └── server.js        # Main Express server entry point
+├── src/
+│   ├── components/      # React UI components (RecordInspectorModal, SearchSection, etc.)
+│   ├── context/         # AuthContext, ThemeContext
+│   ├── services/        # Frontend API client service
+│   ├── App.jsx          # Root React Component
+│   └── main.jsx         # React application entry
+├── logs/                # Centralized Winston log directory (app.log)
+├── dist/                # Production build directory (generated by npm run build)
+├── package.json         # Dependencies, scripts, and engine specs
+└── README.md            # System documentation
+```
+
+---
+
+## 🔑 Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/pulsered
+JWT_SECRET=your_jwt_secret_key_here
+PROWLO_API_KEY=your_prowlo_api_key_here
+```
+
+---
+
+## 🚀 Getting Started (Local Development)
+
+### 1. Prerequisites
+- Node.js (v18+)
+- npm or yarn
+- MongoDB instance (Local or MongoDB Atlas)
+
+### 2. Installation
+```bash
+git clone https://github.com/Sardaar2003/PULSERED.git
+cd PULSERED
+npm install
+```
+
+### 3. Run Server & Client
+
+**Option A: Run Server & Client Together (Development)**
+```bash
+# Terminal 1: Backend Server (Nodemon)
+npm run server
+
+# Terminal 2: Frontend Client (Vite Dev Server)
+npm run client
+```
+- Frontend will be available at: `http://localhost:5173`
+- Backend API will be available at: `http://localhost:5000`
+
+---
+
+## 🌐 Deploying to Render.com
+
+PulseRed is pre-configured for seamless single-service deployment on **Render Web Services**.
+
+### Render Deployment Steps:
+1. Push repository to GitHub (`Sardaar2003/PULSERED`).
+2. Go to [Render Dashboard](https://dashboard.render.com) ➔ **New +** ➔ **Web Service**.
+3. Select the `Sardaar2003/PULSERED` repository.
+4. Configure service settings:
+   - **Environment**: `Node`
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm start`
+5. Add Environment Variables on Render:
+   - `NODE_ENV` = `production`
+   - `MONGODB_URI` = `your_mongodb_connection_string`
+   - `JWT_SECRET` = `your_jwt_secret`
+   - `PROWLO_API_KEY` = `your_prowlo_api_key`
+6. Click **Create Web Service**.
+
+---
+
+## 🛡️ License
+
+Private & Proprietary - All Rights Reserved.
