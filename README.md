@@ -141,7 +141,7 @@ PulseRed is pre-configured for seamless single-service deployment on **Render We
 3. Select the `Sardaar2003/PULSERED` repository.
 4. Configure service settings:
    - **Environment**: `Node`
-   - **Build Command**: `npm install && npm run build`
+   - **Build Command**: `npm install --include=dev && npm run build`
    - **Start Command**: `npm start`
 5. Add Environment Variables on Render:
    - `NODE_ENV` = `production`
