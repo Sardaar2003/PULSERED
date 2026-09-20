@@ -215,13 +215,13 @@ export const LandingPortal = () => {
                   Full Name
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <User size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <User size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none' }} />
                   <input
                     type="text"
                     required
                     className="glass-input"
                     style={{ width: '100%', paddingLeft: '42px' }}
-                    placeholder="Akhil Mohanty"
+                    placeholder="Alex Morgan"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                   />
@@ -234,13 +234,13 @@ export const LandingPortal = () => {
                 Email Address
               </label>
               <div style={{ position: 'relative' }}>
-                <Mail size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                <Mail size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none' }} />
                 <input
                   type="email"
                   required
                   className="glass-input"
                   style={{ width: '100%', paddingLeft: '42px' }}
-                  placeholder="name@company.com"
+                  placeholder="alex@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -252,7 +252,7 @@ export const LandingPortal = () => {
                 Password
               </label>
               <div style={{ position: 'relative' }}>
-                <Lock size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                <Lock size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 2, pointerEvents: 'none' }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -265,7 +265,7 @@ export const LandingPortal = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', zIndex: 2 }}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
