@@ -14,6 +14,8 @@ export const SearchSection = ({
   setTimeFrame,
   sentimentFilter = 'all',
   setSentimentFilter,
+  platformFilter = 'reddit',
+  setPlatformFilter,
   selectedDomain,
   setSelectedDomain,
   activeKeyword = 'AI Agents',
@@ -31,6 +33,7 @@ export const SearchSection = ({
       timeFrame: overrides.timeFrame || timeFrame,
       sentimentFilter: overrides.sentimentFilter || sentimentFilter,
       sortBy: overrides.sortBy || sortBy,
+      platformFilter: overrides.platformFilter || platformFilter,
     });
   };
 
@@ -58,6 +61,13 @@ export const SearchSection = ({
     'neighborhood break-in',
     'best security system for my home',
     'ring doorbell not working',
+  ];
+
+  const platformOptions = [
+    { value: 'reddit', label: '🔴 Reddit' },
+    { value: 'twitter', label: '🐦 Twitter / X' },
+    { value: 'hackernews', label: '🟠 HackerNews' },
+    { value: 'all', label: '🌐 All Networks' },
   ];
 
   const sortOptions = [
@@ -189,6 +199,20 @@ export const SearchSection = ({
 
       {/* Sleek Prowlo Search Filters Strip */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px', position: 'relative', zIndex: 50 }}>
+        {/* Platform Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Globe size={13} color="var(--text-muted)" />
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>Platform:</span>
+          <CustomSelect
+            options={platformOptions}
+            value={platformFilter}
+            onChange={(val) => {
+              if (setPlatformFilter) setPlatformFilter(val);
+              triggerFilterUpdate({ platformFilter: val });
+            }}
+          />
+        </div>
+
         {/* Search Mode */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Filter size={13} color="var(--text-muted)" />

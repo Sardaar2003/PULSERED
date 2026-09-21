@@ -30,12 +30,14 @@ const DashboardContent = () => {
   const [searchMode, setSearchMode] = useState('keyword');
   const [timeFrame, setTimeFrame] = useState('all');
   const [sentimentFilter, setSentimentFilter] = useState('all');
+  const [platformFilter, setPlatformFilter] = useState('reddit');
 
   const handleSearch = async (searchKeyword, targetPage = 1, filterOverrides = {}) => {
     const activeMode = filterOverrides.mode || searchMode;
     const activeTime = filterOverrides.timeFrame || timeFrame;
     const activeSent = filterOverrides.sentimentFilter || sentimentFilter;
     const activeSort = filterOverrides.sortBy || sortBy;
+    const activePlat = filterOverrides.platformFilter || platformFilter;
 
     // ⚡ Instant 0ms Pagination Optimization: If keyword and filters are unchanged and we have allPosts loaded
     if (
@@ -44,6 +46,7 @@ const DashboardContent = () => {
       activeTime === timeFrame &&
       activeSent === sentimentFilter &&
       activeSort === sortBy &&
+      activePlat === platformFilter &&
       allPosts &&
       allPosts.length > 0
     ) {
@@ -64,7 +67,7 @@ const DashboardContent = () => {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/reddit/search?q=${encodeURIComponent(searchKeyword)}&page=${targetPage}&limit=6&mode=${activeMode}&timeFrame=${activeTime}&sentiment=${activeSent}&sortBy=${activeSort}`,
+        `${API_BASE_URL}/reddit/search?q=${encodeURIComponent(searchKeyword)}&page=${targetPage}&limit=6&mode=${activeMode}&timeFrame=${activeTime}&sentiment=${activeSent}&sortBy=${activeSort}&platform=${activePlat}`,
         {
           headers: {
             Authorization: `Bearer ${activeToken}`,
@@ -165,6 +168,8 @@ const DashboardContent = () => {
                 setTimeFrame={setTimeFrame}
                 sentimentFilter={sentimentFilter}
                 setSentimentFilter={setSentimentFilter}
+                platformFilter={platformFilter}
+                setPlatformFilter={setPlatformFilter}
                 selectedDomain={selectedDomain}
                 setSelectedDomain={setSelectedDomain}
                 activeKeyword={keyword}

@@ -11,7 +11,7 @@ const logger = require('../logger');
 // @route   GET /api/reddit/search
 // @desc    Get Reddit data for keyword with pagination support
 router.get('/search', protect, async (req, res) => {
-  const { q, page = 1, limit = 6, mode = 'keyword', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance' } = req.query;
+  const { q, page = 1, limit = 6, mode = 'keyword', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance', platform = 'reddit' } = req.query;
 
   if (!q || !q.trim()) {
     logger.warn('Search query rejected: Empty search keyword provided');
@@ -46,6 +46,7 @@ router.get('/search', protect, async (req, res) => {
       timeFrame,
       sentiment,
       sortBy,
+      platform,
     });
 
     // Apply Pagination

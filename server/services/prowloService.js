@@ -26,8 +26,8 @@ const prowloResultCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options = {}) => {
-  const { mode = 'keyword', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance' } = options;
-  const cacheKey = `${keyword.toLowerCase().trim()}_${mode}_${timeFrame}_${sentiment}_${sortBy}_${userProwloKey || 'default'}`;
+  const { mode = 'keyword', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance', platform = 'reddit' } = options;
+  const cacheKey = `${keyword.toLowerCase().trim()}_${platform}_${mode}_${timeFrame}_${sentiment}_${sortBy}_${userProwloKey || 'default'}`;
   const cached = prowloResultCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     logger.info(`Returning cached Prowlo Live results for keyword: "${keyword}" (0ms latency)`);
@@ -35,7 +35,7 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options =
   }
 
   const apiKey = userProwloKey || process.env.PROWLO_API_KEY;
-  logger.info(`Initiating Live Prowlo Reddit Analysis for keyword: "${keyword}"`, { mode, timeFrame, sentiment, sortBy });
+  logger.info(`Initiating Live Prowlo Analysis for keyword: "${keyword}"`, { platform, mode, timeFrame, sentiment, sortBy });
 
   if (!apiKey) {
     throw new Error('Prowlo API key missing. Please provide a valid PROWLO_API_KEY in environment or user profile.');
@@ -48,7 +48,7 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options =
 
   const payloadBase = {
     q: keyword,
-    platform: 'reddit',
+    platform: platform === 'all' ? 'reddit' : platform,
     mode,
     limit: 30,
   };
