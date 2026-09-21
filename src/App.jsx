@@ -33,15 +33,16 @@ const DashboardContent = () => {
   const [sentimentFilter, setSentimentFilter] = useState('all');
   const [platformFilter, setPlatformFilter] = useState('reddit');
 
-  const handleSearch = async (searchKeyword, targetPage = 1, filterOverrides = {}) => {
+  const handleSearch = async (searchKeyword, targetPage = 1, filterOverrides = {}, isPagination = false) => {
     const activeMode = filterOverrides.mode || searchMode;
     const activeTime = filterOverrides.timeFrame || timeFrame;
     const activeSent = filterOverrides.sentimentFilter || sentimentFilter;
     const activeSort = filterOverrides.sortBy || sortBy;
     const activePlat = filterOverrides.platformFilter || platformFilter;
 
-    // ⚡ Instant 0ms Pagination Optimization: If keyword and filters are unchanged and we have allPosts loaded
+    // ⚡ Instant 0ms Pagination Optimization: Only when explicitly paginating existing search results
     if (
+      isPagination &&
       searchKeyword === keyword &&
       activeMode === searchMode &&
       activeTime === timeFrame &&
@@ -212,7 +213,7 @@ const DashboardContent = () => {
                     keyword={keyword}
                     pagination={pagination}
                     page={page}
-                    setPage={(newPage) => handleSearch(keyword, newPage)}
+                    setPage={(newPage) => handleSearch(keyword, newPage, {}, true)}
                     allPosts={allPosts}
                     selectedDomain={selectedDomain}
                   />

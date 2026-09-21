@@ -169,16 +169,28 @@ const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options =
     const score = typeof post.score === 'number' ? post.score : typeof post.ups === 'number' ? post.ups : typeof post.likes === 'number' ? post.likes : 0;
     const numComments = typeof post.num_comments === 'number' ? post.num_comments : typeof post.numComments === 'number' ? post.numComments : 0;
     
-    let permalink = post.permalink;
+    let permalink = post.permalink || post.url;
     if (platform === 'twitter') {
-      permalink = `https://x.com/search?q=${encodeURIComponent(keyword)}`;
+      if (permalink && (permalink.includes('x.com') || permalink.includes('twitter.com'))) {
+        if (!permalink.startsWith('http')) permalink = `https://x.com${permalink.startsWith('/') ? '' : '/'}${permalink}`;
+      } else {
+        permalink = `https://x.com/search?q=${encodeURIComponent(title || keyword)}`;
+      }
     } else if (platform === 'hackernews') {
-      permalink = `https://news.ycombinator.com/item?id=${1000000 + (post.id ? String(post.id).replace(/\D/g, '') || index : index)}`;
+      if (permalink && (permalink.includes('ycombinator.com') || permalink.includes('algolia.com'))) {
+        if (!permalink.startsWith('http')) permalink = `https://news.ycombinator.com${permalink.startsWith('/') ? '' : '/'}${permalink}`;
+      } else if (post.id && /^\d+$/.test(String(post.id))) {
+        permalink = `https://news.ycombinator.com/item?id=${post.id}`;
+      } else {
+        permalink = `https://hn.algolia.com/?q=${encodeURIComponent(title || keyword)}`;
+      }
     } else {
-      if (!permalink || !permalink.includes('reddit.com')) {
+      if (permalink) {
+        if (!permalink.startsWith('http')) {
+          permalink = `https://reddit.com${permalink.startsWith('/') ? '' : '/'}${permalink}`;
+        }
+      } else {
         permalink = `https://reddit.com/search?q=${encodeURIComponent(keyword)}`;
-      } else if (!permalink.startsWith('http')) {
-        permalink = `https://reddit.com${permalink}`;
       }
     }
 
