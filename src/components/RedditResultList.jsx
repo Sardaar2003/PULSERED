@@ -74,6 +74,29 @@ export const RedditResultList = ({ posts, keyword, pagination, page, setPage, al
 
   const { totalPosts = posts.length, totalPages = 1 } = pagination || {};
 
+  const getPlatformBadge = (plat) => {
+    const p = (plat || 'reddit').toLowerCase();
+    if (p === 'twitter') {
+      return (
+        <span style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.35)', fontWeight: '700', fontSize: '0.78rem', padding: '3px 10px', borderRadius: '14px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          🐦 Twitter / X
+        </span>
+      );
+    }
+    if (p === 'hackernews') {
+      return (
+        <span style={{ background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: '1px solid rgba(249, 115, 22, 0.35)', fontWeight: '700', fontSize: '0.78rem', padding: '3px 10px', borderRadius: '14px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          🟠 HackerNews
+        </span>
+      );
+    }
+    return (
+      <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', fontWeight: '700', fontSize: '0.78rem', padding: '3px 10px', borderRadius: '14px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+        🔴 Reddit
+      </span>
+    );
+  };
+
   return (
     <div style={{ marginBottom: '40px' }}>
       {/* Header with View Toggle & Export Controls */}
@@ -155,6 +178,7 @@ export const RedditResultList = ({ posts, keyword, pagination, page, setPage, al
                 {/* Card Meta Bar */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {getPlatformBadge(post.platform)}
                     <span
                       style={{
                         background: 'rgba(99, 102, 241, 0.2)',
@@ -292,9 +316,10 @@ export const RedditResultList = ({ posts, keyword, pagination, page, setPage, al
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)' }}>
+                <th style={{ padding: '12px 14px' }}>Platform</th>
                 <th style={{ padding: '12px 14px' }}>Domain</th>
                 <th style={{ padding: '12px 14px' }}>Watcher Term</th>
-                <th style={{ padding: '12px 14px' }}>Subreddit</th>
+                <th style={{ padding: '12px 14px' }}>Channel / Handle</th>
                 <th style={{ padding: '12px 14px', minWidth: '220px' }}>Thread Title</th>
                 <th style={{ padding: '12px 14px' }}>Upvotes</th>
                 <th style={{ padding: '12px 14px' }}>Comments</th>
@@ -314,6 +339,9 @@ export const RedditResultList = ({ posts, keyword, pagination, page, setPage, al
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--card-inner-bg)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
+                    <td style={{ padding: '14px' }}>
+                      {getPlatformBadge(post.platform)}
+                    </td>
                     <td style={{ padding: '14px', fontWeight: '600', color: 'var(--accent-primary)' }}>
                       {activeDomainName}
                     </td>

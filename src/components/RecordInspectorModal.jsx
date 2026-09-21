@@ -17,6 +17,21 @@ export const RecordInspectorModal = ({ post, searchKeyword, domainName, onClose 
 
   const matchPercentage = post.relevanceScore ? Math.round(post.relevanceScore * 100) : Math.min(98, 70 + matchedTerms.length * 10);
 
+    const platform = (post.platform || 'reddit').toLowerCase();
+  let platformName = 'Reddit';
+  let openActionText = 'Open Thread on Reddit';
+  let platformIcon = '🔴';
+
+  if (platform === 'twitter') {
+    platformName = 'Twitter / X';
+    openActionText = 'Open Post on Twitter / X';
+    platformIcon = '🐦';
+  } else if (platform === 'hackernews') {
+    platformName = 'HackerNews';
+    openActionText = 'Open Story on HackerNews';
+    platformIcon = '🟠';
+  }
+
   return (
     <div
       style={{
@@ -112,11 +127,14 @@ export const RecordInspectorModal = ({ post, searchKeyword, domainName, onClose 
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-            <span style={{ background: 'var(--accent-gradient)', color: '#fff', fontSize: '0.75rem', fontWeight: '800', padding: '3px 10px', borderRadius: '12px' }}>
+            <span style={{ background: 'var(--accent-gradient)', color: '#fff', fontSize: '0.75rem', fontWeight: '800', padding: '3px 10px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              {platformIcon} {platformName}
+            </span>
+            <span style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8', fontWeight: '700', fontSize: '0.75rem', padding: '3px 10px', borderRadius: '12px' }}>
               {post.subreddit}
             </span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Author: <strong style={{ color: 'var(--text-secondary)' }}>u/{post.author}</strong>
+              Author: <strong style={{ color: 'var(--text-secondary)' }}>{post.author}</strong>
             </span>
             <span style={{ fontSize: '0.8rem', color: '#4ade80', fontWeight: '700', marginLeft: 'auto' }}>
               <ShieldCheck size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
@@ -151,6 +169,9 @@ export const RecordInspectorModal = ({ post, searchKeyword, domainName, onClose 
               Why Was This Record Chosen?
             </h5>
             <ul style={{ paddingLeft: '18px', margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <li>
+                <strong>Platform Network</strong>: <span style={{ color: 'var(--text-primary)', fontWeight: '700' }}>{platformIcon} {platformName}</span>
+              </li>
               <li>
                 <strong>Semantic Relevance Score</strong>: <span style={{ color: '#4ade80', fontWeight: '700' }}>{matchPercentage}% Match</span> against target watcher query.
               </li>
@@ -202,9 +223,9 @@ export const RecordInspectorModal = ({ post, searchKeyword, domainName, onClose 
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Upvote Score:</span>
+                <span style={{ color: 'var(--text-muted)' }}>Upvotes / Likes:</span>
                 <span style={{ fontWeight: '700', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ArrowUp size={14} /> {post.score ? post.score.toLocaleString() : 0} upvotes
+                  <ArrowUp size={14} /> {post.score ? post.score.toLocaleString() : 0}
                 </span>
               </div>
 
@@ -230,13 +251,13 @@ export const RecordInspectorModal = ({ post, searchKeyword, domainName, onClose 
           </button>
 
           <a
-            href={post.permalink}
+            href={post.permalink || post.url}
             target="_blank"
             rel="noopener noreferrer"
             className="glass-button"
-            style={{ borderRadius: '14px', textDecoration: 'none' }}
+            style={{ borderRadius: '14px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
           >
-            Open Thread on Reddit
+            {openActionText}
             <ExternalLink size={15} />
           </a>
         </div>

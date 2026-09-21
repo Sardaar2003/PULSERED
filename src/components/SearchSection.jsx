@@ -260,6 +260,7 @@ export const SearchSection = ({
           <CustomSelect
             options={sortOptions}
             value={sortBy}
+            align="right"
             onChange={(val) => {
               if (setSortBy) setSortBy(val);
               triggerFilterUpdate({ sortBy: val });
