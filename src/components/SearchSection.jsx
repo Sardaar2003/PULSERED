@@ -3,11 +3,36 @@ import { Search, History, Sparkles, Filter, SlidersHorizontal, Globe } from 'luc
 import { useAuth } from '../context/AuthContext';
 import { CustomSelect } from './CustomSelect';
 
-export const SearchSection = ({ onSearch, loading, sortBy, setSortBy, selectedDomain, setSelectedDomain }) => {
+export const SearchSection = ({
+  onSearch,
+  loading,
+  sortBy,
+  setSortBy,
+  searchMode = 'keyword',
+  setSearchMode,
+  timeFrame = 'all',
+  setTimeFrame,
+  sentimentFilter = 'all',
+  setSentimentFilter,
+  selectedDomain,
+  setSelectedDomain,
+  activeKeyword = 'AI Agents',
+}) => {
   const [query, setQuery] = useState('');
   const [isCustomDomain, setIsCustomDomain] = useState(false);
   const [customDomainInput, setCustomDomainInput] = useState('');
   const { searchHistory, isAuthenticated } = useAuth();
+
+  const activeQuery = query.trim() || activeKeyword;
+
+  const triggerFilterUpdate = (overrides = {}) => {
+    onSearch(activeQuery, {
+      mode: overrides.mode || searchMode,
+      timeFrame: overrides.timeFrame || timeFrame,
+      sentimentFilter: overrides.sentimentFilter || sentimentFilter,
+      sortBy: overrides.sortBy || sortBy,
+    });
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -40,6 +65,25 @@ export const SearchSection = ({ onSearch, loading, sortBy, setSortBy, selectedDo
     { value: 'upvotes', label: 'Most Upvoted' },
     { value: 'comments', label: 'Most Comments' },
     { value: 'recent', label: 'Newest Posts' },
+  ];
+
+  const modeOptions = [
+    { value: 'keyword', label: '🔍 Keyword Match' },
+    { value: 'semantic', label: '✨ Semantic Context' },
+  ];
+
+  const timeOptions = [
+    { value: 'all', label: '🕒 All Time' },
+    { value: 'day', label: '⚡ Past 24h' },
+    { value: 'week', label: '📅 Past 7 Days' },
+    { value: 'month', label: '📆 Past 30 Days' },
+  ];
+
+  const sentimentOptions = [
+    { value: 'all', label: '💬 All Sentiments' },
+    { value: 'positive', label: '🟢 Positive Only' },
+    { value: 'negative', label: '🔴 Negative / Pain Points' },
+    { value: 'neutral', label: '⚪ Neutral Only' },
   ];
 
   const domainOptions = [
@@ -111,7 +155,7 @@ export const SearchSection = ({ onSearch, loading, sortBy, setSortBy, selectedDo
       </div>
 
       {/* Main Search Input */}
-      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', maxWidth: '800px', margin: '0 auto 20px auto' }}>
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '12px', maxWidth: '800px', margin: '0 auto 16px auto' }}>
         <div style={{ position: 'relative', flex: 1 }}>
           <Search
             size={20}
@@ -143,53 +187,96 @@ export const SearchSection = ({ onSearch, loading, sortBy, setSortBy, selectedDo
         </button>
       </form>
 
-      {/* Control Bar: Prowlo Watcher Pills & Custom Glassmorphism Curved Select */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 40 }}>
-        {/* Prowlo Watcher Keyword Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
-            <Sparkles size={14} color="#818cf8" />
-            Prowlo Keywords:
-          </span>
-          {prowloWatcherKeywords.map((topic) => (
-            <button
-              key={topic}
-              type="button"
-              onClick={() => handlePillClick(topic)}
-              style={{
-                background: 'var(--card-inner-bg)',
-                border: '1px solid var(--glass-border)',
-                color: 'var(--text-secondary)',
-                borderRadius: '20px',
-                padding: '4px 14px',
-                fontSize: '0.8rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.borderColor = 'var(--accent-primary)';
-                e.target.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.borderColor = 'var(--glass-border)';
-                e.target.style.color = 'var(--text-secondary)';
-              }}
-            >
-              {topic}
-            </button>
-          ))}
+      {/* Sleek Prowlo Search Filters Strip */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '18px', position: 'relative', zIndex: 50 }}>
+        {/* Search Mode */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Filter size={13} color="var(--text-muted)" />
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>Mode:</span>
+          <CustomSelect
+            options={modeOptions}
+            value={searchMode}
+            onChange={(val) => {
+              if (setSearchMode) setSearchMode(val);
+              triggerFilterUpdate({ mode: val });
+            }}
+          />
         </div>
 
-        {/* Custom Glassmorphism Curved Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative', zIndex: 50 }}>
-          <SlidersHorizontal size={14} color="var(--text-muted)" />
+        {/* Time Range */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>Time:</span>
+          <CustomSelect
+            options={timeOptions}
+            value={timeFrame}
+            onChange={(val) => {
+              if (setTimeFrame) setTimeFrame(val);
+              triggerFilterUpdate({ timeFrame: val });
+            }}
+          />
+        </div>
+
+        {/* Sentiment */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>Sentiment:</span>
+          <CustomSelect
+            options={sentimentOptions}
+            value={sentimentFilter}
+            onChange={(val) => {
+              if (setSentimentFilter) setSentimentFilter(val);
+              triggerFilterUpdate({ sentimentFilter: val });
+            }}
+          />
+        </div>
+
+        {/* Sort */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <SlidersHorizontal size={13} color="var(--text-muted)" />
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>Sort:</span>
           <CustomSelect
             options={sortOptions}
             value={sortBy}
-            onChange={setSortBy}
+            onChange={(val) => {
+              if (setSortBy) setSortBy(val);
+              triggerFilterUpdate({ sortBy: val });
+            }}
           />
         </div>
+      </div>
+
+      {/* Prowlo Watcher Keyword Pills */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 40 }}>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
+          <Sparkles size={14} color="#818cf8" />
+          Prowlo Keywords:
+        </span>
+        {prowloWatcherKeywords.map((topic) => (
+          <button
+            key={topic}
+            type="button"
+            onClick={() => handlePillClick(topic)}
+            style={{
+              background: 'var(--card-inner-bg)',
+              border: '1px solid var(--glass-border)',
+              color: 'var(--text-secondary)',
+              borderRadius: '20px',
+              padding: '4px 14px',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.borderColor = 'var(--accent-primary)';
+              e.target.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.borderColor = 'var(--glass-border)';
+              e.target.style.color = 'var(--text-secondary)';
+            }}
+          >
+            {topic}
+          </button>
+        ))}
       </div>
     </div>
   );

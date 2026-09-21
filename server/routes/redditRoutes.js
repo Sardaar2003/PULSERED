@@ -11,7 +11,7 @@ const logger = require('../logger');
 // @route   GET /api/reddit/search
 // @desc    Get Reddit data for keyword with pagination support
 router.get('/search', protect, async (req, res) => {
-  const { q, page = 1, limit = 6 } = req.query;
+  const { q, page = 1, limit = 6, mode = 'keyword', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance' } = req.query;
 
   if (!q || !q.trim()) {
     logger.warn('Search query rejected: Empty search keyword provided');
@@ -40,8 +40,13 @@ router.get('/search', protect, async (req, res) => {
       }
     }
 
-    // Call Prowlo service
-    const { posts, analytics } = await fetchRedditDataViaProwlo(keyword, userProwloKey);
+    // Call Prowlo service with filters
+    const { posts, analytics } = await fetchRedditDataViaProwlo(keyword, userProwloKey, {
+      mode,
+      timeFrame,
+      sentiment,
+      sortBy,
+    });
 
     // Apply Pagination
     const totalPosts = posts.length;

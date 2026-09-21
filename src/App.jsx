@@ -27,9 +27,26 @@ const DashboardContent = () => {
   const [sortBy, setSortBy] = useState('relevance');
   const [page, setPage] = useState(1);
 
-  const handleSearch = async (searchKeyword, targetPage = 1) => {
-    // ⚡ Instant 0ms Pagination Optimization: If keyword is unchanged and we have allPosts loaded
-    if (searchKeyword === keyword && allPosts && allPosts.length > 0) {
+  const [searchMode, setSearchMode] = useState('keyword');
+  const [timeFrame, setTimeFrame] = useState('all');
+  const [sentimentFilter, setSentimentFilter] = useState('all');
+
+  const handleSearch = async (searchKeyword, targetPage = 1, filterOverrides = {}) => {
+    const activeMode = filterOverrides.mode || searchMode;
+    const activeTime = filterOverrides.timeFrame || timeFrame;
+    const activeSent = filterOverrides.sentimentFilter || sentimentFilter;
+    const activeSort = filterOverrides.sortBy || sortBy;
+
+    // ⚡ Instant 0ms Pagination Optimization: If keyword and filters are unchanged and we have allPosts loaded
+    if (
+      searchKeyword === keyword &&
+      activeMode === searchMode &&
+      activeTime === timeFrame &&
+      activeSent === sentimentFilter &&
+      activeSort === sortBy &&
+      allPosts &&
+      allPosts.length > 0
+    ) {
       setPage(targetPage);
       const limitNum = 6;
       const startIndex = (targetPage - 1) * limitNum;
@@ -47,7 +64,7 @@ const DashboardContent = () => {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/reddit/search?q=${encodeURIComponent(searchKeyword)}&page=${targetPage}&limit=6`,
+        `${API_BASE_URL}/reddit/search?q=${encodeURIComponent(searchKeyword)}&page=${targetPage}&limit=6&mode=${activeMode}&timeFrame=${activeTime}&sentiment=${activeSent}&sortBy=${activeSort}`,
         {
           headers: {
             Authorization: `Bearer ${activeToken}`,
@@ -138,12 +155,19 @@ const DashboardContent = () => {
           ) : (
             <>
               <SearchSection
-                onSearch={(k) => handleSearch(k, 1)}
+                onSearch={(k, filterOpts) => handleSearch(k, 1, filterOpts)}
                 loading={loading}
                 sortBy={sortBy}
                 setSortBy={setSortBy}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
+                timeFrame={timeFrame}
+                setTimeFrame={setTimeFrame}
+                sentimentFilter={sentimentFilter}
+                setSentimentFilter={setSentimentFilter}
                 selectedDomain={selectedDomain}
                 setSelectedDomain={setSelectedDomain}
+                activeKeyword={keyword}
               />
 
               {error && (

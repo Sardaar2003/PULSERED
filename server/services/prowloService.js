@@ -25,8 +25,9 @@ const analyzeSentiment = (text) => {
 const prowloResultCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null) => {
-  const cacheKey = `${keyword.toLowerCase().trim()}_${userProwloKey || 'default'}`;
+const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options = {}) => {
+  const { mode = 'keyword', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance' } = options;
+  const cacheKey = `${keyword.toLowerCase().trim()}_${mode}_${timeFrame}_${sentiment}_${sortBy}_${userProwloKey || 'default'}`;
   const cached = prowloResultCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     logger.info(`Returning cached Prowlo Live results for keyword: "${keyword}" (0ms latency)`);
@@ -34,7 +35,7 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null) => {
   }
 
   const apiKey = userProwloKey || process.env.PROWLO_API_KEY;
-  logger.info(`Initiating Live Prowlo Reddit Analysis for keyword: "${keyword}"`, { apiKeyProvided: !!apiKey });
+  logger.info(`Initiating Live Prowlo Reddit Analysis for keyword: "${keyword}"`, { mode, timeFrame, sentiment, sortBy });
 
   if (!apiKey) {
     throw new Error('Prowlo API key missing. Please provide a valid PROWLO_API_KEY in environment or user profile.');
@@ -45,23 +46,29 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null) => {
     'Content-Type': 'application/json',
   };
 
+  const payloadBase = {
+    q: keyword,
+    platform: 'reddit',
+    mode,
+    limit: 30,
+  };
+  if (timeFrame && timeFrame !== 'all') {
+    payloadBase.time_frame = timeFrame;
+  }
+
   // 1. Primary Query: Try full exact phrase on Prowlo API
   try {
-    logger.info(`Querying Prowlo API for exact phrase: "${keyword}"...`);
+    logger.info(`Querying Prowlo API for phrase "${keyword}" (mode: ${mode})...`);
     const response = await axios.post(
       'https://api.prowlo.com/v1/search',
-      {
-        q: keyword,
-        platform: 'reddit',
-        limit: 25,
-      },
+      payloadBase,
       { headers, timeout: 10000 }
     );
 
     const rawItems = response.data?.data?.items || response.data?.results || response.data?.data || [];
     if (Array.isArray(rawItems) && rawItems.length > 0) {
       logger.info(`Live Prowlo API returned ${rawItems.length} posts for exact phrase "${keyword}"`);
-      const result = processAndNormalizeResults(keyword, rawItems, 'Prowlo Live Intelligence Engine');
+      const result = processAndNormalizeResults(keyword, rawItems, 'Prowlo Live Intelligence Engine', options);
       prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
       return result;
     }
@@ -82,13 +89,13 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null) => {
       logger.info(`0 items for exact phrase. Retrying Prowlo API with key pair: "${pairQuery}"...`);
       const pairRes = await axios.post(
         'https://api.prowlo.com/v1/search',
-        { q: pairQuery, platform: 'reddit', limit: 25 },
+        { ...payloadBase, q: pairQuery },
         { headers, timeout: 8000 }
       );
       const pairItems = pairRes.data?.data?.items || [];
       if (Array.isArray(pairItems) && pairItems.length > 0) {
         logger.info(`Live Prowlo API returned ${pairItems.length} posts for key pair "${pairQuery}"`);
-        const result = processAndNormalizeResults(keyword, pairItems, 'Prowlo Live Intelligence Engine');
+        const result = processAndNormalizeResults(keyword, pairItems, 'Prowlo Live Intelligence Engine', options);
         prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
         return result;
       }
@@ -106,7 +113,7 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null) => {
     try {
       const tokenRes = await axios.post(
         'https://api.prowlo.com/v1/search',
-        { q: word, platform: 'reddit', limit: 15 },
+        { ...payloadBase, q: word, limit: 15 },
         { headers, timeout: 6000 }
       );
       const tokenItems = tokenRes.data?.data?.items || [];
@@ -123,7 +130,7 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null) => {
 
   if (aggregatedItems.length > 0) {
     logger.info(`Successfully aggregated ${aggregatedItems.length} live posts via Prowlo API across key terms`);
-    const result = processAndNormalizeResults(keyword, aggregatedItems, 'Prowlo Live Intelligence Engine');
+    const result = processAndNormalizeResults(keyword, aggregatedItems, 'Prowlo Live Intelligence Engine', options);
     prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
   }
@@ -131,8 +138,8 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null) => {
   throw new Error(`No live Reddit results found on Prowlo API for keyword "${keyword}". Please try broader terms.`);
 };
 
-const processAndNormalizeResults = (keyword, rawPosts, sourceProvider) => {
-  const posts = rawPosts.map((post, index) => {
+const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options = {}) => {
+  let posts = rawPosts.map((post, index) => {
     const title = post.title || post.headline || `Reddit discussion about ${keyword}`;
     const selftext = post.selftext || post.snippet || post.body || '';
     const subreddit = post.subreddit_name_prefixed || (post.subreddit ? `r/${post.subreddit.replace(/^r\//, '')}` : 'r/reddit');
@@ -157,6 +164,43 @@ const processAndNormalizeResults = (keyword, rawPosts, sourceProvider) => {
       relevanceScore: Math.round((0.98 - index * 0.02) * 100) / 100,
     };
   });
+
+  // 1. Sentiment Filter
+  if (options.sentiment && options.sentiment !== 'all') {
+    const filtered = posts.filter((p) => p.sentiment.toLowerCase() === options.sentiment.toLowerCase());
+    if (filtered.length > 0) {
+      posts = filtered;
+    }
+  }
+
+  // 2. Time Frame Filter
+  if (options.timeFrame && options.timeFrame !== 'all') {
+    const nowSec = Math.floor(Date.now() / 1000);
+    let secondsAgo = 0;
+    if (options.timeFrame === 'day') secondsAgo = 24 * 3600;
+    else if (options.timeFrame === 'week') secondsAgo = 7 * 24 * 3600;
+    else if (options.timeFrame === 'month') secondsAgo = 30 * 24 * 3600;
+    else if (options.timeFrame === 'year') secondsAgo = 365 * 24 * 3600;
+
+    if (secondsAgo > 0) {
+      const threshold = nowSec - secondsAgo;
+      const filteredByTime = posts.filter((p) => p.createdUtc >= threshold);
+      if (filteredByTime.length > 0) {
+        posts = filteredByTime;
+      }
+    }
+  }
+
+  // 3. Sorting
+  if (options.sortBy === 'upvotes') {
+    posts.sort((a, b) => b.score - a.score);
+  } else if (options.sortBy === 'comments') {
+    posts.sort((a, b) => b.numComments - a.numComments);
+  } else if (options.sortBy === 'recent') {
+    posts.sort((a, b) => b.createdUtc - a.createdUtc);
+  } else {
+    posts.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+  }
 
   const subredditMap = {};
   const sentimentCounts = { Positive: 0, Neutral: 0, Negative: 0 };
