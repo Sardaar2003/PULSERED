@@ -139,41 +139,47 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options =
 };
 
 const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options = {}) => {
+  const targetPlatform = options.platform || 'reddit';
+
   let posts = rawPosts.map((post, index) => {
-    // Determine platform
-    let platform = post.platform || options.platform || 'reddit';
-    if (platform === 'all') {
+    // Determine platform based on requested platform filter
+    let platform = targetPlatform;
+    if (targetPlatform === 'all') {
       const platCycle = ['reddit', 'twitter', 'hackernews'];
-      platform = post.platform || platCycle[index % 3];
+      platform = platCycle[index % 3];
     }
 
     const title = post.title || post.headline || `${platform === 'twitter' ? 'Twitter post' : platform === 'hackernews' ? 'HackerNews story' : 'Reddit discussion'} about ${keyword}`;
     const selftext = post.selftext || post.snippet || post.body || '';
+    const author = post.author || (platform === 'twitter' ? 'x_tech_user' : platform === 'hackernews' ? 'hn_dev' : 'reddit_user');
     
     let subreddit = post.subreddit_name_prefixed || post.subreddit;
-    if (!subreddit) {
-      if (platform === 'twitter') subreddit = `@${post.author || 'x_user'}`;
-      else if (platform === 'hackernews') subreddit = 'news.ycombinator.com';
-      else subreddit = 'r/reddit';
-    } else if (platform === 'reddit' && !subreddit.startsWith('r/')) {
-      subreddit = `r/${subreddit.replace(/^r\//, '')}`;
+    if (platform === 'twitter') {
+      subreddit = `@${author.replace(/^u\//, '')}`;
+    } else if (platform === 'hackernews') {
+      subreddit = 'news.ycombinator.com';
+    } else {
+      if (!subreddit || subreddit.startsWith('@') || subreddit === 'news.ycombinator.com') {
+        subreddit = `r/${keyword.toLowerCase().replace(/[^a-z0-9]/g, '') || 'reddit'}`;
+      } else if (!subreddit.startsWith('r/')) {
+        subreddit = `r/${subreddit.replace(/^r\//, '')}`;
+      }
     }
 
     const score = typeof post.score === 'number' ? post.score : typeof post.ups === 'number' ? post.ups : typeof post.likes === 'number' ? post.likes : 0;
     const numComments = typeof post.num_comments === 'number' ? post.num_comments : typeof post.numComments === 'number' ? post.numComments : 0;
-    const author = post.author || (platform === 'twitter' ? 'x_user' : platform === 'hackernews' ? 'hn_user' : 'reddit_user');
     
     let permalink = post.permalink;
-    if (!permalink) {
-      if (platform === 'twitter') {
-        permalink = post.url || `https://x.com/search?q=${encodeURIComponent(keyword)}`;
-      } else if (platform === 'hackernews') {
-        permalink = post.url || `https://news.ycombinator.com/item?id=${post.id || 10000 + index}`;
-      } else {
+    if (platform === 'twitter') {
+      permalink = `https://x.com/search?q=${encodeURIComponent(keyword)}`;
+    } else if (platform === 'hackernews') {
+      permalink = `https://news.ycombinator.com/item?id=${1000000 + (post.id ? String(post.id).replace(/\D/g, '') || index : index)}`;
+    } else {
+      if (!permalink || !permalink.includes('reddit.com')) {
         permalink = `https://reddit.com/search?q=${encodeURIComponent(keyword)}`;
+      } else if (!permalink.startsWith('http')) {
+        permalink = `https://reddit.com${permalink}`;
       }
-    } else if (!permalink.startsWith('http')) {
-      permalink = `https://reddit.com${permalink}`;
     }
 
     const sentiment = analyzeSentiment(`${title} ${selftext}`);
@@ -187,7 +193,7 @@ const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options =
       author,
       score,
       numComments,
-      url: post.url || permalink,
+      url: permalink,
       permalink,
       createdUtc: post.created_utc || Math.floor(Date.now() / 1000) - index * 3600,
       sentiment,
