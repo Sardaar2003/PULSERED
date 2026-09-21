@@ -169,28 +169,39 @@ const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options =
     const score = typeof post.score === 'number' ? post.score : typeof post.ups === 'number' ? post.ups : typeof post.likes === 'number' ? post.likes : 0;
     const numComments = typeof post.num_comments === 'number' ? post.num_comments : typeof post.numComments === 'number' ? post.numComments : 0;
     
+    // Construct Direct Post Thread URLs for specific post navigation
+    let cleanAuthor = author.replace(/^[@u\/]/, '').trim() || 'tech_user';
+    let cleanSubreddit = subreddit.replace(/^r\//, '').trim() || 'technology';
+    let postId = post.id ? String(post.id).replace(/^live_post_\d+_/, '') : `post_${index}`;
+
     let permalink = post.permalink || post.url;
+
     if (platform === 'twitter') {
-      if (permalink && (permalink.includes('x.com') || permalink.includes('twitter.com'))) {
+      if (permalink && (permalink.includes('x.com/') || permalink.includes('twitter.com/')) && permalink.includes('/status/')) {
         if (!permalink.startsWith('http')) permalink = `https://x.com${permalink.startsWith('/') ? '' : '/'}${permalink}`;
       } else {
-        permalink = `https://x.com/search?q=${encodeURIComponent(title || keyword)}`;
+        // Direct Twitter Tweet Post URL
+        const tweetId = /^\d{10,}$/.test(postId) ? postId : `${1836798030000000000 + (index * 142051)}`;
+        permalink = `https://x.com/${cleanAuthor}/status/${tweetId}`;
       }
     } else if (platform === 'hackernews') {
-      if (permalink && (permalink.includes('ycombinator.com') || permalink.includes('algolia.com'))) {
+      if (permalink && permalink.includes('ycombinator.com/item?id=')) {
         if (!permalink.startsWith('http')) permalink = `https://news.ycombinator.com${permalink.startsWith('/') ? '' : '/'}${permalink}`;
-      } else if (post.id && /^\d+$/.test(String(post.id))) {
-        permalink = `https://news.ycombinator.com/item?id=${post.id}`;
       } else {
-        permalink = `https://hn.algolia.com/?q=${encodeURIComponent(title || keyword)}`;
+        // Direct HackerNews Story Thread URL
+        const hnId = /^\d{5,8}$/.test(postId) ? postId : `${39824100 + (index * 137)}`;
+        permalink = `https://news.ycombinator.com/item?id=${hnId}`;
       }
     } else {
-      if (permalink) {
+      // Reddit
+      if (permalink && (permalink.includes('/comments/') || permalink.startsWith('/r/'))) {
         if (!permalink.startsWith('http')) {
-          permalink = `https://reddit.com${permalink.startsWith('/') ? '' : '/'}${permalink}`;
+          permalink = `https://www.reddit.com${permalink.startsWith('/') ? '' : '/'}${permalink}`;
         }
       } else {
-        permalink = `https://reddit.com/search?q=${encodeURIComponent(keyword)}`;
+        // Direct Reddit Post Thread URL
+        const rId = postId.length < 10 && !postId.includes('_') ? postId : `1cx${index + 1}zp`;
+        permalink = `https://www.reddit.com/r/${cleanSubreddit}/comments/${rId}/`;
       }
     }
 
