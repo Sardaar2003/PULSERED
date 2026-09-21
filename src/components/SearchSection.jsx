@@ -39,9 +39,7 @@ export const SearchSection = ({
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (query.trim()) {
-      onSearch(query.trim());
-    }
+    onSearch(activeQuery);
   };
 
   const handlePillClick = (keyword) => {
@@ -208,7 +206,6 @@ export const SearchSection = ({
             value={platformFilter}
             onChange={(val) => {
               if (setPlatformFilter) setPlatformFilter(val);
-              triggerFilterUpdate({ platformFilter: val });
             }}
           />
         </div>
@@ -222,7 +219,6 @@ export const SearchSection = ({
             value={searchMode}
             onChange={(val) => {
               if (setSearchMode) setSearchMode(val);
-              triggerFilterUpdate({ mode: val });
             }}
           />
         </div>
@@ -235,7 +231,6 @@ export const SearchSection = ({
             value={timeFrame}
             onChange={(val) => {
               if (setTimeFrame) setTimeFrame(val);
-              triggerFilterUpdate({ timeFrame: val });
             }}
           />
         </div>
@@ -248,7 +243,6 @@ export const SearchSection = ({
             value={sentimentFilter}
             onChange={(val) => {
               if (setSentimentFilter) setSentimentFilter(val);
-              triggerFilterUpdate({ sentimentFilter: val });
             }}
           />
         </div>
@@ -263,7 +257,6 @@ export const SearchSection = ({
             align="right"
             onChange={(val) => {
               if (setSortBy) setSortBy(val);
-              triggerFilterUpdate({ sortBy: val });
             }}
           />
         </div>
