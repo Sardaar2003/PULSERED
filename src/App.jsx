@@ -11,6 +11,7 @@ import { UserManagementView } from './components/UserManagementView';
 import { SavedPostsModal } from './components/SavedPostsModal';
 import { ProwloSettingsModal } from './components/ProwloSettingsModal';
 import { SessionEvictedModal } from './components/SessionEvictedModal';
+import { DynamicLoaderCard } from './components/DynamicLoaderCard';
 const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api');
 
 const DashboardContent = () => {
@@ -202,26 +203,7 @@ const DashboardContent = () => {
               )}
 
               {loading ? (
-                <div className="glass-card" style={{ padding: '60px', textAlign: 'center' }}>
-                  <div
-                    className="spinner"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      border: '3px solid rgba(99, 102, 241, 0.2)',
-                      borderTopColor: '#6366f1',
-                      borderRadius: '50%',
-                      margin: '0 auto 16px auto',
-                      animation: 'spin 0.8s linear infinite',
-                    }}
-                  />
-                  <h4 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '6px' }}>
-                    Fetching Reddit Insights via PulseRed AI...
-                  </h4>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    Parsing subreddits, community metadata, and calculating sentiment scores.
-                  </p>
-                </div>
+                <DynamicLoaderCard platform={platformFilter} keyword={keyword} />
               ) : (
                 <>
                   {analytics && <AnalyticsPanel analytics={analytics} keyword={keyword} />}
