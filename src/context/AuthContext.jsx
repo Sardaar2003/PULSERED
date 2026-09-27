@@ -155,8 +155,8 @@ export const AuthProvider = ({ children }) => {
     setAdminUsers([]);
   };
 
-  const updateProwloKey = async (prowloApiKey) => {
-    const response = await axios.put(`${API_BASE_URL}/auth/settings`, { prowloApiKey });
+  const updateProwloKey = async (prowloApiKey, redditClientId = '', redditClientSecret = '') => {
+    const response = await axios.put(`${API_BASE_URL}/auth/settings`, { prowloApiKey, redditClientId, redditClientSecret });
     setUser(response.data.user);
     return response.data;
   };

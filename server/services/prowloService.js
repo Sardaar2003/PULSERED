@@ -26,10 +26,10 @@ const prowloResultCache = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options = {}) => {
-  const { mode = 'keyword', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance', platform = 'reddit' } = options;
+  const { mode = 'semantic', timeFrame = 'all', sentiment = 'all', sortBy = 'relevance', platform = 'reddit', forceRefresh = false } = options;
   const cacheKey = `${keyword.toLowerCase().trim()}_${platform}_${mode}_${timeFrame}_${sentiment}_${sortBy}_${userProwloKey || 'default'}`;
   const cached = prowloResultCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+  if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     logger.info(`Returning cached Prowlo Live results for keyword: "${keyword}" (0ms latency)`);
     return cached.data;
   }
@@ -135,7 +135,22 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options =
     return result;
   }
 
-  throw new Error(`No live Reddit results found on Prowlo API for keyword "${keyword}". Please try broader terms.`);
+  // 4. Redditapis.com API Integration Fallback
+  try {
+    const { fetchRedditDataViaRedditApis } = require('./redditApisService');
+    logger.info(`Querying Redditapis.com engine for phrase "${keyword}"...`);
+    const redditApisItems = await fetchRedditDataViaRedditApis(keyword, options);
+    if (Array.isArray(redditApisItems) && redditApisItems.length > 0) {
+      logger.info(`Live Redditapis.com API returned ${redditApisItems.length} posts for "${keyword}"`);
+      const result = processAndNormalizeResults(keyword, redditApisItems, 'Redditapis Live Engine', options);
+      prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
+    }
+  } catch (err) {
+    logger.warn(`Redditapis query notice for "${keyword}": ${err.message}`);
+  }
+
+  throw new Error(`No live Reddit results found on Prowlo or Redditapis for keyword "${keyword}". Please try broader terms.`);
 };
 
 const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options = {}) => {
@@ -206,6 +221,7 @@ const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options =
     }
 
     const sentiment = analyzeSentiment(`${title} ${selftext}`);
+    let threadComments = Array.isArray(post.comments) ? post.comments : Array.isArray(post.threadComments) ? post.threadComments : [];
 
     return {
       id: post.id || `live_post_${Date.now()}_${index}`,
@@ -221,6 +237,7 @@ const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options =
       createdUtc: post.created_utc || Math.floor(Date.now() / 1000) - index * 3600,
       sentiment,
       relevanceScore: Math.round((0.98 - index * 0.02) * 100) / 100,
+      threadComments,
     };
   });
 

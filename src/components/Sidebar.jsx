@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { LayoutDashboard, Users, Bookmark, Key, Sun, Moon, LogOut, Zap, ShieldCheck } from 'lucide-react';
+import { Users, Bookmark, Key, Sun, Moon, LogOut, Zap, Globe, BarChart3 } from 'lucide-react';
 
 export const Sidebar = ({ activeTab, setActiveTab, onOpenSettings, onOpenSaved }) => {
   const { user, isAuthenticated, logout, savedPosts, adminUsers } = useAuth();
@@ -69,15 +69,35 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpenSettings, onOpenSaved }
         </div>
 
         {/* Navigation Items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {/* Insights Dashboard Tab */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Primary Lead Agent Workspace Tab */}
           <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`nav-tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
-            style={{ width: '100%', padding: '10px 14px', borderRadius: '14px', fontSize: '0.9rem', justifyContent: 'flex-start' }}
+            onClick={() => setActiveTab('pipeline')}
+            className={`nav-tab-button ${activeTab === 'pipeline' || activeTab === 'dashboard' ? 'active' : ''}`}
+            style={{ width: '100%', padding: '12px 14px', borderRadius: '14px', fontSize: '0.92rem', justifyContent: 'flex-start' }}
           >
-            <LayoutDashboard size={18} />
-            <span>Insights Dashboard</span>
+            <Zap size={20} color={activeTab === 'pipeline' || activeTab === 'dashboard' ? '#ffffff' : '#fbbf24'} />
+            <span>Lead Agent Workspace</span>
+          </button>
+
+          {/* Analytics & Intelligence Tab */}
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`nav-tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '14px', fontSize: '0.9rem', justifyContent: 'flex-start', gap: '10px' }}
+          >
+            <BarChart3 size={18} color={activeTab === 'analytics' ? '#ffffff' : '#a855f7'} />
+            <span>Analytics & Intelligence</span>
+          </button>
+
+          {/* Brand Portfolio Vault Tab (Full CRUD) */}
+          <button
+            onClick={() => setActiveTab('brands')}
+            className={`nav-tab-button ${activeTab === 'brands' ? 'active' : ''}`}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '14px', fontSize: '0.9rem', justifyContent: 'flex-start', gap: '10px' }}
+          >
+            <Globe size={18} color={activeTab === 'brands' ? '#ffffff' : '#38bdf8'} />
+            <span>Brand Vault Portfolio</span>
           </button>
 
           {/* Admin User Management Tab (Admin Only) */}
@@ -87,8 +107,8 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpenSettings, onOpenSaved }
               className={`nav-tab-button ${activeTab === 'users' ? 'active' : ''}`}
               style={{ width: '100%', padding: '10px 14px', borderRadius: '14px', fontSize: '0.9rem', justifyContent: 'space-between' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Users size={18} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Users size={18} color={activeTab === 'users' ? '#ffffff' : '#818cf8'} />
                 <span>User Management</span>
               </div>
               {pendingCount > 0 && (
@@ -96,10 +116,10 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpenSettings, onOpenSaved }
                   style={{
                     background: '#f59e0b',
                     color: '#000000',
-                    fontSize: '0.7rem',
+                    fontSize: '0.72rem',
                     fontWeight: '800',
                     borderRadius: '10px',
-                    padding: '2px 7px',
+                    padding: '2px 8px',
                     lineHeight: 1,
                   }}
                 >
@@ -115,7 +135,7 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpenSettings, onOpenSaved }
             className="nav-tab-button"
             style={{ width: '100%', padding: '10px 14px', borderRadius: '14px', fontSize: '0.9rem', justifyContent: 'space-between' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Bookmark size={18} color="#a855f7" />
               <span>Saved Threads</span>
             </div>
@@ -124,10 +144,10 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpenSettings, onOpenSaved }
                 style={{
                   background: '#ec4899',
                   color: '#ffffff',
-                  fontSize: '0.7rem',
+                  fontSize: '0.72rem',
                   fontWeight: '700',
                   borderRadius: '10px',
-                  padding: '2px 7px',
+                  padding: '2px 8px',
                   lineHeight: 1,
                 }}
               >
@@ -140,7 +160,7 @@ export const Sidebar = ({ activeTab, setActiveTab, onOpenSettings, onOpenSaved }
           <button
             onClick={onOpenSettings}
             className="nav-tab-button"
-            style={{ width: '100%', padding: '10px 14px', borderRadius: '14px', fontSize: '0.9rem', justifyContent: 'flex-start' }}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: '14px', fontSize: '0.9rem', justifyContent: 'flex-start', gap: '10px' }}
           >
             <Key size={18} color="#6366f1" />
             <span>API Settings</span>

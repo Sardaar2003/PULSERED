@@ -5,7 +5,9 @@ let isConnected = false;
 let memoryStore = {
   users: [],
   searchHistory: [],
-  savedPosts: []
+  savedPosts: [],
+  outreachLeads: [],
+  leadAgentItems: []
 };
 
 const connectDB = async () => {

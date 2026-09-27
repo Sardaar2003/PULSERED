@@ -307,9 +307,9 @@ router.delete('/admin/users/:userId', protect, adminProtect, async (req, res) =>
 });
 
 // @route   PUT /api/auth/settings
-// @desc    Update user API key settings
+// @desc    Update user API key settings (PulseRed & Reddit OAuth credentials)
 router.put('/settings', protect, async (req, res) => {
-  const { prowloApiKey } = req.body;
+  const { prowloApiKey, redditClientId, redditClientSecret } = req.body;
 
   try {
     const isDbConnected = getIsConnected();
@@ -317,23 +317,47 @@ router.put('/settings', protect, async (req, res) => {
       const user = await User.findById(req.user.id);
       if (!user) return res.status(404).json({ error: 'User not found' });
 
-      user.prowloApiKey = prowloApiKey || '';
+      if (prowloApiKey !== undefined) user.prowloApiKey = prowloApiKey;
+      if (redditClientId !== undefined) user.redditClientId = redditClientId;
+      if (redditClientSecret !== undefined) user.redditClientSecret = redditClientSecret;
+
       await user.save();
-      logger.info(`Updated API Key settings for user: ${user.email}`);
+      logger.info(`Updated API/OAuth settings for user: ${user.email}`);
 
       return res.json({
         message: 'Settings updated successfully',
-        user: { id: user._id, name: user.name, email: user.email, role: user.role, isApproved: user.isApproved, prowloApiKey: user.prowloApiKey },
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isApproved: user.isApproved,
+          prowloApiKey: user.prowloApiKey,
+          redditClientId: user.redditClientId,
+          redditClientSecret: user.redditClientSecret,
+        },
       });
     } else {
       const store = getMemoryStore();
       const user = store.users.find((u) => u.id === req.user.id);
       if (!user) return res.status(404).json({ error: 'User not found' });
 
-      user.prowloApiKey = prowloApiKey || '';
+      if (prowloApiKey !== undefined) user.prowloApiKey = prowloApiKey;
+      if (redditClientId !== undefined) user.redditClientId = redditClientId;
+      if (redditClientSecret !== undefined) user.redditClientSecret = redditClientSecret;
+
       return res.json({
         message: 'Settings updated successfully',
-        user: { id: user.id, name: user.name, email: user.email, role: user.role, isApproved: user.isApproved, prowloApiKey: user.prowloApiKey },
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isApproved: user.isApproved,
+          prowloApiKey: user.prowloApiKey,
+          redditClientId: user.redditClientId,
+          redditClientSecret: user.redditClientSecret,
+        },
       });
     }
   } catch (error) {

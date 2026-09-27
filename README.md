@@ -98,6 +98,7 @@ NODE_ENV=development
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/pulsered
 JWT_SECRET=your_jwt_secret_key_here
 PROWLO_API_KEY=your_prowlo_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ---

@@ -34,6 +34,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  openaiApiKey: {
+    type: String,
+    default: '',
+  },
+  redditClientId: {
+    type: String,
+    default: '',
+  },
+  redditClientSecret: {
+    type: String,
+    default: '',
+  },
   createdAt: {
     type: Date,
     default: Date.now,

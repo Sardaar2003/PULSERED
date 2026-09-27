@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
-import { X, Key, CheckCircle, ShieldAlert, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Key, CheckCircle, ShieldAlert, Sparkles, Lock, Cpu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const ProwloSettingsModal = ({ isOpen, onClose }) => {
   const { user, updateProwloKey } = useAuth();
   const [apiKey, setApiKey] = useState(user?.prowloApiKey || '');
+  const [redditClientId, setRedditClientId] = useState(user?.redditClientId || '');
+  const [redditClientSecret, setRedditClientSecret] = useState(user?.redditClientSecret || '');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      setApiKey(user.prowloApiKey || '');
+      setRedditClientId(user.redditClientId || '');
+      setRedditClientSecret(user.redditClientSecret || '');
+    }
+  }, [user]);
 
   if (!isOpen) return null;
 
@@ -16,13 +26,13 @@ export const ProwloSettingsModal = ({ isOpen, onClose }) => {
     setMessage(null);
 
     try {
-      await updateProwloKey(apiKey.trim());
-      setMessage({ type: 'success', text: 'PulseRed API Key updated successfully!' });
+      await updateProwloKey(apiKey.trim(), redditClientId.trim(), redditClientSecret.trim());
+      setMessage({ type: 'success', text: 'API & Reddit OAuth Credentials saved successfully!' });
       setTimeout(() => {
         onClose();
       }, 1200);
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update API key.' });
+      setMessage({ type: 'error', text: 'Failed to update credentials.' });
     } finally {
       setSaving(false);
     }
@@ -32,14 +42,14 @@ export const ProwloSettingsModal = ({ isOpen, onClose }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="glass-card animate-fade-in"
-        style={{ width: '100%', maxWidth: '520px', padding: '28px' }}
+        style={{ width: '100%', maxWidth: '540px', padding: '28px', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Key size={22} color="#6366f1" />
-            <h3 style={{ fontSize: '1.3rem', fontWeight: '700' }}>PulseRed API Settings</h3>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: '700' }}>API & Reddit OAuth Settings</h3>
           </div>
 
           <button onClick={onClose} className="glass-button-secondary" style={{ padding: '6px', borderRadius: '50%' }}>
@@ -53,10 +63,10 @@ export const ProwloSettingsModal = ({ isOpen, onClose }) => {
             <Sparkles size={18} color="#818cf8" style={{ marginTop: '2px', flexShrink: 0 }} />
             <div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: '600', marginBottom: '4px' }}>
-                PulseRed Crawl Integration
+                Official Reddit OAuth Integration
               </p>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                Social crawling engine extracts community discussions without API rate limit blocks. Provide your custom API Key below to unlock high-capacity search.
+                Provide your official Reddit App Client ID & Secret (`https://www.reddit.com/prefs/apps`) to fetch 100% live comment trees directly via Reddit's OAuth API.
               </p>
             </div>
           </div>
@@ -64,9 +74,10 @@ export const ProwloSettingsModal = ({ isOpen, onClose }) => {
 
         {/* Input Form */}
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Prowlo API Key */}
           <div>
             <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
-              API Key
+              PulseRed / Prowlo Intelligence API Key
             </label>
             <input
               type="password"
@@ -76,8 +87,38 @@ export const ProwloSettingsModal = ({ isOpen, onClose }) => {
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
+          </div>
+
+          {/* Reddit OAuth Client ID */}
+          <div>
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+              Reddit API Client ID
+            </label>
+            <input
+              type="text"
+              className="glass-input"
+              style={{ width: '100%', borderRadius: '14px' }}
+              placeholder="e.g., 14-character script ID from reddit.com/prefs/apps"
+              value={redditClientId}
+              onChange={(e) => setRedditClientId(e.target.value)}
+            />
+          </div>
+
+          {/* Reddit OAuth Client Secret */}
+          <div>
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+              Reddit API Client Secret
+            </label>
+            <input
+              type="password"
+              className="glass-input"
+              style={{ width: '100%', borderRadius: '14px' }}
+              placeholder="e.g., 27-character secret key"
+              value={redditClientSecret}
+              onChange={(e) => setRedditClientSecret(e.target.value)}
+            />
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Leave blank to automatically utilize resilient Live Reddit feed fallback.
+              Create a free Script app at <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'underline' }}>reddit.com/prefs/apps</a> to generate your OAuth keys.
             </p>
           </div>
 
@@ -105,7 +146,7 @@ export const ProwloSettingsModal = ({ isOpen, onClose }) => {
               Cancel
             </button>
             <button type="submit" className="glass-button" disabled={saving}>
-              {saving ? 'Saving...' : 'Save API Settings'}
+              {saving ? 'Saving...' : 'Save Settings'}
             </button>
           </div>
         </form>

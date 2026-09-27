@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ override: true, path: path.join(__dirname, '../.env') });
 
 const logger = require('./logger');
 const { connectDB } = require('./config/db');
@@ -10,6 +10,11 @@ const { seedMasterAdmin } = require('./config/seedAdmin');
 
 const authRoutes = require('./routes/authRoutes');
 const redditRoutes = require('./routes/redditRoutes');
+const outreachRoutes = require('./routes/outreachRoutes');
+const leadAgentRoutes = require('./routes/leadAgentRoutes');
+const brandDomainRoutes = require('./routes/brandDomainRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+
 
 const app = express();
 
@@ -33,6 +38,11 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms', 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/reddit', redditRoutes);
+app.use('/api/outreach', outreachRoutes);
+app.use('/api/agent', leadAgentRoutes);
+app.use('/api/brand-domains', brandDomainRoutes);
+app.use('/api/analytics', analyticsRoutes);
+
 
 // Healthcheck Route
 app.get('/api/health', (req, res) => {
