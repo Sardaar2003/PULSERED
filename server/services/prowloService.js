@@ -56,101 +56,56 @@ const fetchRedditDataViaProwlo = async (keyword, userProwloKey = null, options =
     payloadBase.time_frame = timeFrame;
   }
 
-  // 1. Primary Query: Try full exact phrase on Prowlo API
-  try {
-    logger.info(`Querying Prowlo API for phrase "${keyword}" (mode: ${mode})...`);
-    const response = await axios.post(
-      'https://api.prowlo.com/v1/search',
-      payloadBase,
-      { headers, timeout: 10000 }
-    );
-
-    const rawItems = response.data?.data?.items || response.data?.results || response.data?.data || [];
-    if (Array.isArray(rawItems) && rawItems.length > 0) {
-      logger.info(`Live Prowlo API returned ${rawItems.length} posts for exact phrase "${keyword}"`);
-      const result = processAndNormalizeResults(keyword, rawItems, 'Prowlo Live Intelligence Engine', options);
-      prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
-      return result;
-    }
-  } catch (error) {
-    logger.warn(`Prowlo exact query notice for "${keyword}": ${error.response?.status || error.message}`);
-  }
-
-  // 2. Secondary Query: Try primary word-pairs on Prowlo API
-  const stopWords = ['about', 'into', 'with', 'from', 'that', 'this', 'have', 'for', 'the', 'my', 'your', 'our', 'and', 'are', 'was', 'not'];
-  const words = keyword
-    .split(' ')
-    .map((w) => w.toLowerCase().replace(/[^a-z0-9-]/g, ''))
-    .filter((w) => w.length > 2 && !stopWords.includes(w));
-
-  if (words.length >= 2) {
-    const pairQuery = `${words[0]} ${words[1]}`;
-    try {
-      logger.info(`0 items for exact phrase. Retrying Prowlo API with key pair: "${pairQuery}"...`);
-      const pairRes = await axios.post(
-        'https://api.prowlo.com/v1/search',
-        { ...payloadBase, q: pairQuery },
-        { headers, timeout: 8000 }
-      );
-      const pairItems = pairRes.data?.data?.items || [];
-      if (Array.isArray(pairItems) && pairItems.length > 0) {
-        logger.info(`Live Prowlo API returned ${pairItems.length} posts for key pair "${pairQuery}"`);
-        const result = processAndNormalizeResults(keyword, pairItems, 'Prowlo Live Intelligence Engine', options);
-        prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
-        return result;
-      }
-    } catch (error) {
-      logger.warn(`Prowlo key pair query notice for "${pairQuery}": ${error.message}`);
-    }
-  }
-
-  // 3. Multi-Term Aggregation: Query Prowlo API across individual key tokens & deduplicate
-  logger.info(`Querying Prowlo API across key tokens: [${words.join(', ')}]...`);
-  const aggregatedItems = [];
+  // SMART HYBRID INGESTION: Run Prowlo Semantic Vector Search & RedditAPIs MCP Keyword Search in parallel
+  const combinedItems = [];
   const seenIds = new Set();
 
-  for (const word of words) {
-    try {
-      const tokenRes = await axios.post(
-        'https://api.prowlo.com/v1/search',
-        { ...payloadBase, q: word, limit: 15 },
-        { headers, timeout: 6000 }
-      );
-      const tokenItems = tokenRes.data?.data?.items || [];
-      for (const item of tokenItems) {
-        if (!seenIds.has(item.id)) {
-          seenIds.add(item.id);
-          aggregatedItems.push(item);
-        }
+  const addUniqueItems = (items) => {
+    if (!Array.isArray(items)) return;
+    for (const item of items) {
+      const idKey = item.id || item.permalink || item.name || item.title;
+      if (idKey && !seenIds.has(idKey)) {
+        seenIds.add(idKey);
+        combinedItems.push(item);
       }
-    } catch (err) {
-      logger.warn(`Prowlo token query notice for "${word}": ${err.message}`);
     }
-  }
+  };
 
-  if (aggregatedItems.length > 0) {
-    logger.info(`Successfully aggregated ${aggregatedItems.length} live posts via Prowlo API across key terms`);
-    const result = processAndNormalizeResults(keyword, aggregatedItems, 'Prowlo Live Intelligence Engine', options);
+  // 1. Parallel Execution: Prowlo Semantic Search + RedditAPIs MCP Search
+  const [prowloRes, mcpRes] = await Promise.all([
+    (async () => {
+      try {
+        logger.info(`Querying Prowlo API for semantic phrase "${keyword}"...`);
+        const res = await axios.post('https://api.prowlo.com/v1/search', payloadBase, { headers, timeout: 8000 });
+        return res.data?.data?.items || res.data?.results || [];
+      } catch (e) {
+        logger.warn(`Prowlo semantic fetch note for "${keyword}": ${e.message}`);
+        return [];
+      }
+    })(),
+    (async () => {
+      try {
+        const { fetchRedditDataViaRedditApis } = require('./redditApisService');
+        logger.info(`Querying RedditAPIs MCP [reddit_search] for exact phrase "${keyword}"...`);
+        return await fetchRedditDataViaRedditApis(keyword, options);
+      } catch (e) {
+        logger.warn(`RedditAPIs MCP search note for "${keyword}": ${e.message}`);
+        return [];
+      }
+    })(),
+  ]);
+
+  addUniqueItems(prowloRes);
+  addUniqueItems(mcpRes);
+
+  if (combinedItems.length > 0) {
+    logger.info(`⚡ [Smart Hybrid Engine] Combined ${combinedItems.length} unique posts (${prowloRes.length} Prowlo Semantic + ${mcpRes.length} RedditAPIs MCP) for "${keyword}"`);
+    const result = processAndNormalizeResults(keyword, combinedItems, 'Smart Hybrid Intelligence Engine', options);
     prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
   }
 
-  // 4. Redditapis.com API Integration Fallback
-  try {
-    const { fetchRedditDataViaRedditApis } = require('./redditApisService');
-    logger.info(`Querying Redditapis.com engine for phrase "${keyword}"...`);
-    const redditApisItems = await fetchRedditDataViaRedditApis(keyword, options);
-    if (Array.isArray(redditApisItems) && redditApisItems.length > 0) {
-      logger.info(`Live Redditapis.com API returned ${redditApisItems.length} posts for "${keyword}"`);
-      const result = processAndNormalizeResults(keyword, redditApisItems, 'Redditapis Live Engine', options);
-      prowloResultCache.set(cacheKey, { data: result, timestamp: Date.now() });
-      return result;
-    }
-  } catch (err) {
-    logger.warn(`Redditapis query notice for "${keyword}": ${err.message}`);
-  }
-
-  throw new Error(`No live Reddit results found on Prowlo or Redditapis for keyword "${keyword}". Please try broader terms.`);
+  throw new Error(`No live Reddit results found on Prowlo or RedditAPIs MCP for keyword "${keyword}". Please try broader terms.`);
 };
 
 const processAndNormalizeResults = (keyword, rawPosts, sourceProvider, options = {}) => {

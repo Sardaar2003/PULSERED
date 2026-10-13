@@ -4,21 +4,25 @@ import { ThemeProvider } from './context/ThemeContext';
 import { Sidebar } from './components/Sidebar';
 import { LandingPortal } from './components/LandingPortal';
 import { UserManagementView } from './components/UserManagementView';
-import { SavedPostsModal } from './components/SavedPostsModal';
 import { ProwloSettingsModal } from './components/ProwloSettingsModal';
+import { RedditAccountModal } from './components/RedditAccountModal';
 import { SessionEvictedModal } from './components/SessionEvictedModal';
+import { AgentSettingsView } from './components/AgentSettingsView';
+import { SavedThreadsView } from './components/SavedThreadsView';
+import { InboxHubView } from './components/InboxHubView';
 import { LeadPipelineBoard } from './components/LeadPipelineBoard';
 import { BrandVaultView } from './components/BrandVaultView';
 import { AnalyticsIntelligenceView } from './components/AnalyticsIntelligenceView';
 
 const DashboardContent = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState('pipeline'); // 'pipeline' | 'analytics' | 'users' | 'brands'
+  const [activeTab, setActiveTab] = useState('pipeline'); // 'pipeline' | 'inbox' | 'analytics' | 'users' | 'brands' | 'agent-settings' | 'saved-threads'
   const [selectedDomain] = useState('AlertCareLine.com');
 
   // Modals state
-  const [isSavedModalOpen, setIsSavedModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isRedditModalOpen, setIsRedditModalOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   if (authLoading) {
     return (
@@ -49,32 +53,70 @@ const DashboardContent = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
-        onOpenSaved={() => setIsSavedModalOpen(true)}
+        onOpenRedditAccount={() => setIsRedditModalOpen(true)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
       />
 
-      <div style={{ position: 'relative', zIndex: 1, flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: '40px' }}>
-        <main style={{ maxWidth: '1240px', width: '100%', margin: '0 auto', padding: '28px 24px', flex: 1 }}>
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          flex: 1,
+          marginLeft: isSidebarCollapsed ? '76px' : '260px',
+          transition: 'margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          minWidth: 0,
+          width: isSidebarCollapsed ? 'calc(100% - 76px)' : 'calc(100% - 260px)',
+          paddingBottom: activeTab === 'inbox' ? '0' : '40px',
+        }}
+      >
+        <main
+          style={{
+            maxWidth: '1600px',
+            width: '100%',
+            margin: '0 auto',
+            padding: activeTab === 'inbox' ? '16px 20px 0 20px' : '28px 24px',
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           {activeTab === 'users' && user?.role === 'admin' ? (
             <UserManagementView />
+          ) : activeTab === 'inbox' ? (
+            <InboxHubView
+              onGoToWorkspace={() => setActiveTab('pipeline')}
+              onOpenRedditModal={() => setIsRedditModalOpen(true)}
+            />
           ) : activeTab === 'brands' ? (
             <BrandVaultView />
           ) : activeTab === 'analytics' ? (
             <AnalyticsIntelligenceView />
+          ) : activeTab === 'agent-settings' ? (
+            <AgentSettingsView />
+          ) : activeTab === 'saved-threads' ? (
+            <SavedThreadsView onGoToWorkspace={() => setActiveTab('pipeline')} />
           ) : (
             <LeadPipelineBoard selectedDomain={selectedDomain} />
           )}
         </main>
 
-        <footer style={{ marginTop: 'auto', paddingTop: '40px', paddingBottom: '16px', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', letterSpacing: '0.3px' }}>
-            PulseRed AI Platform • Lead Agent Intelligence & CRM Hub
-          </p>
-        </footer>
+        {activeTab !== 'inbox' && (
+          <footer style={{ marginTop: 'auto', paddingTop: '40px', paddingBottom: '16px', textAlign: 'center' }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', letterSpacing: '0.3px' }}>
+              PulseRed AI Platform • Lead Agent Intelligence & CRM Hub
+            </p>
+          </footer>
+        )}
       </div>
 
       {/* Modals */}
-      <SavedPostsModal isOpen={isSavedModalOpen} onClose={() => setIsSavedModalOpen(false)} />
       <ProwloSettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
+      <RedditAccountModal isOpen={isRedditModalOpen} onClose={() => setIsRedditModalOpen(false)} />
       <SessionEvictedModal />
     </div>
   );

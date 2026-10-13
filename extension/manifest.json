@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "PulseRed Connect",
+  "version": "1.0.0",
+  "description": "1-click Reddit account connection for PulseRed AI Outreach Hub",
+  "permissions": [
+    "cookies",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.reddit.com/*",
+    "http://localhost:*/*",
+    "https://*/*"
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PulseRed Connect",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }
+}

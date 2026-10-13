@@ -1,9 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShieldCheck, UserCheck, UserX, Clock, Users, Crown, RefreshCw, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 export const UserManagementView = () => {
   const { adminUsers, fetchAdminUsers, approveUser, deleteUser, user: currentUser } = useAuth();
+  const [deleteTarget, setDeleteTarget] = useState(null); // null or { userId, email }
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchAdminUsers();
@@ -13,8 +16,19 @@ export const UserManagementView = () => {
   const approvedCount = adminUsers.filter((u) => u.isApproved).length;
 
   const handleDelete = (userId, email) => {
-    if (window.confirm(`Are you sure you want to permanently delete user account "${email}"? This action cannot be undone.`)) {
-      deleteUser(userId);
+    setDeleteTarget({ userId, email });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteUser(deleteTarget.userId);
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -85,15 +99,21 @@ export const UserManagementView = () => {
           </span>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table className="custom-table">
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              textAlign: 'left',
+            }}
+          >
             <thead>
-              <tr>
-                <th>Member Name & Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Registered Date</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'var(--card-inner-bg)' }}>
+                <th style={{ padding: '16px 20px', fontSize: '0.85rem', color: 'var(--text-secondary)', minWidth: '240px' }}>Member Name & Email</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.85rem', color: 'var(--text-secondary)', minWidth: '140px' }}>Role</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.85rem', color: 'var(--text-secondary)', minWidth: '170px' }}>Status</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.85rem', color: 'var(--text-secondary)', minWidth: '150px' }}>Registered Date</th>
+                <th style={{ padding: '16px 20px', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'right', minWidth: '200px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -109,14 +129,20 @@ export const UserManagementView = () => {
                   const userId = user.id || user._id;
 
                   return (
-                    <tr key={userId}>
+                    <tr
+                      key={userId}
+                      style={{
+                        borderBottom: '1px solid var(--glass-border)',
+                        transition: 'background 0.2s ease',
+                      }}
+                    >
                       {/* Name & Email */}
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <td style={{ padding: '16px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <div
                             style={{
-                              width: '38px',
-                              height: '38px',
+                              width: '40px',
+                              height: '40px',
                               borderRadius: '50%',
                               background: user.isApproved ? 'rgba(99, 102, 241, 0.2)' : 'rgba(245, 158, 11, 0.2)',
                               border: user.isApproved ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid rgba(245, 158, 11, 0.4)',
@@ -126,59 +152,60 @@ export const UserManagementView = () => {
                               color: 'var(--text-primary)',
                               fontWeight: '700',
                               fontSize: '0.9rem',
+                              flexShrink: 0,
                             }}
                           >
                             {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                           </div>
                           <div>
-                            <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{user.name}</div>
+                            <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '0.95rem' }}>{user.name}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{user.email}</div>
                           </div>
                         </div>
                       </td>
 
                       {/* Role */}
-                      <td>
+                      <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
                         {user.role === 'admin' ? (
-                          <span style={{ fontSize: '0.75rem', background: 'rgba(129, 140, 248, 0.2)', color: '#818cf8', border: '1px solid rgba(129, 140, 248, 0.4)', padding: '4px 10px', borderRadius: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Crown size={12} /> Master Admin
+                          <span style={{ fontSize: '0.75rem', background: 'rgba(129, 140, 248, 0.2)', color: '#818cf8', border: '1px solid rgba(129, 140, 248, 0.4)', padding: '5px 12px', borderRadius: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <Crown size={13} /> Master Admin
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.75rem', background: 'var(--card-inner-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', padding: '4px 10px', borderRadius: '12px', fontWeight: '600' }}>
+                          <span style={{ fontSize: '0.75rem', background: 'var(--card-inner-bg)', color: 'var(--text-secondary)', border: '1px solid var(--glass-border)', padding: '5px 12px', borderRadius: '14px', fontWeight: '600', display: 'inline-flex', alignItems: 'center' }}>
                             Standard User
                           </span>
                         )}
                       </td>
 
                       {/* Status */}
-                      <td>
+                      <td style={{ padding: '16px 20px', whiteSpace: 'nowrap' }}>
                         {user.isApproved ? (
-                          <span style={{ fontSize: '0.75rem', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.4)', padding: '4px 12px', borderRadius: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <UserCheck size={12} /> Approved
+                          <span style={{ fontSize: '0.75rem', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.4)', padding: '5px 14px', borderRadius: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <UserCheck size={13} /> Approved
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.75rem', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '4px 12px', borderRadius: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} /> Pending Approval
+                          <span style={{ fontSize: '0.75rem', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '5px 14px', borderRadius: '14px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <Clock size={13} /> Pending Approval
                           </span>
                         )}
                       </td>
 
                       {/* Registered Date */}
-                      <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      <td style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap', fontWeight: '600' }}>
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recent'}
                       </td>
 
                       {/* Actions */}
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ padding: '16px 20px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {isMasterAdminAccount ? (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Fixed Master</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', fontWeight: '600' }}>Fixed Master</span>
                         ) : (
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                             {user.isApproved ? (
                               <button
                                 onClick={() => approveUser(userId, false)}
                                 className="glass-button-secondary"
-                                style={{ padding: '6px 12px', fontSize: '0.8rem', color: '#f59e0b', borderRadius: '14px' }}
+                                style={{ padding: '7px 14px', fontSize: '0.8rem', color: '#f59e0b', borderRadius: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                               >
                                 <UserX size={14} /> Revoke Access
                               </button>
@@ -186,7 +213,7 @@ export const UserManagementView = () => {
                               <button
                                 onClick={() => approveUser(userId, true)}
                                 className="glass-button"
-                                style={{ padding: '6px 14px', fontSize: '0.8rem', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', borderRadius: '14px' }}
+                                style={{ padding: '7px 16px', fontSize: '0.8rem', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', borderRadius: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                               >
                                 <UserCheck size={14} /> Approve
                               </button>
@@ -195,7 +222,7 @@ export const UserManagementView = () => {
                             <button
                               onClick={() => handleDelete(userId, user.email)}
                               className="glass-button-secondary"
-                              style={{ padding: '6px 12px', fontSize: '0.8rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)', borderRadius: '14px' }}
+                              style={{ padding: '7px 14px', fontSize: '0.8rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.3)', borderRadius: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                               title="Delete Account"
                             >
                               <Trash2 size={14} /> Delete
@@ -211,6 +238,19 @@ export const UserManagementView = () => {
           </table>
         </div>
       </div>
+
+      {/* Confirm Delete Custom Modal */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(deleteTarget)}
+        title="Delete User Account"
+        itemName={deleteTarget?.email}
+        message={`Are you sure you want to permanently delete user account "${deleteTarget?.email || ''}"? Access permissions will be immediately revoked and this action cannot be undone.`}
+        confirmText="Delete Account"
+        cancelText="Cancel"
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

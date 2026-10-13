@@ -120,7 +120,79 @@ const fetchLiveCommentsViaRedditOAuth = async (permalink, clientId = null, clien
   return [];
 };
 
+/**
+ * Fetches recent posts and comments for a specific Reddit username to analyze communication style & past activity.
+ * @param {string} username - Reddit username
+ * @returns {Object} User history snapshot with top subreddits, recent comments, and post titles
+ */
+const fetchUserRecentHistory = async (username) => {
+  if (!username || username === '[deleted]' || username === 'AutoModerator' || username === 'Reddit User') {
+    return {
+      retrieved: false,
+      reason: 'Standard bot or deleted account - profile history not applicable',
+      username: username || 'Unknown',
+    };
+  }
+
+  const cleanUser = username.replace(/^[@u\/]/, '').trim();
+  if (!cleanUser) {
+    return {
+      retrieved: false,
+      reason: 'Invalid username format',
+      username: username,
+    };
+  }
+
+  // Primary: Use Redditapis API (REDDITAPIS_API_KEY / REDDITAPIS_KEY)
+  const { fetchUserHistoryViaRedditApis } = require('./redditApisService');
+  const redditApisResult = await fetchUserHistoryViaRedditApis(cleanUser);
+
+  if (redditApisResult && redditApisResult.retrieved) {
+    return redditApisResult;
+  }
+
+  // Fallback to OAuth token if configured
+  try {
+    const token = await getRedditAccessToken();
+    if (token) {
+      const headers = { 'Authorization': `Bearer ${token}`, 'User-Agent': 'PulseRedApp/1.0.0 (by /u/pulsered_app)' };
+      const url = `https://oauth.reddit.com/user/${cleanUser}/overview?limit=6`;
+      logger.info(`Fetching Reddit user history via OAuth for u/${cleanUser}...`);
+      const res = await axios.get(url, { headers, timeout: 5000 });
+      const children = res.data?.data?.children || [];
+      if (children.length > 0) {
+        const subreddits = new Set();
+        const recentSnippets = [];
+        for (const child of children) {
+          if (child.data?.subreddit) subreddits.add(`r/${child.data.subreddit}`);
+          if (child.data?.title) recentSnippets.push(`Post: "${child.data.title.substring(0, 60)}"`);
+          else if (child.data?.body) recentSnippets.push(`Comment: "${child.data.body.substring(0, 70)}..."`);
+        }
+        return {
+          retrieved: true,
+          username: cleanUser,
+          totalKarma: null,
+          accountAgeDays: null,
+          frequentSubreddits: Array.from(subreddits),
+          recentSnippets: recentSnippets.slice(0, 4),
+          totalObserved: children.length,
+        };
+      }
+    }
+  } catch (err) {
+    logger.debug(`OAuth user history fetch note: ${err.message}`);
+  }
+
+  // If unretrievable, return explicit status stating history could not be retrieved
+  return {
+    retrieved: false,
+    reason: `Unable to retrieve Reddit user history for u/${cleanUser}`,
+    username: cleanUser,
+  };
+};
+
 module.exports = {
   getRedditAccessToken,
   fetchLiveCommentsViaRedditOAuth,
+  fetchUserRecentHistory,
 };

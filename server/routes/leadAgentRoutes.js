@@ -5,8 +5,8 @@ const VoiceProfile = require('../models/VoiceProfile');
 const { getIsConnected, getMemoryStore } = require('../config/db');
 const { protect } = require('../middleware/authMiddleware');
 const logger = require('../logger');
-const { runSingleSubredditSweep, runBatchKeywordsSweep, startRotationalSweeper, stopRotationalSweeper, getSweeperStatus } = require('../services/leadSweepService');
-const { generate3ReplyCandidates, analyzeLeadWith3DScoringAndOpener } = require('../services/aiOutreachService');
+const { runSingleSubredditSweep, runBatchKeywordsSweep, runBrandDomainSweep, startRotationalSweeper, stopRotationalSweeper, getSweeperStatus } = require('../services/leadSweepService');
+const { generate3ReplyCandidates, analyzeLeadWith3DScoringAndOpener, generateHumanDmResponseWithStrategy } = require('../services/aiOutreachService');
 
 // @route   GET /api/agent/leads
 // @desc    Get all pipeline leads for the active user
@@ -311,7 +311,19 @@ router.post('/sweep/run-all-keywords', protect, async (req, res) => {
 });
 
 
-// @route   POST /api/agent/sweep/start
+// @route   POST /api/agent/brand-sweep/:brandId
+// @desc    Trigger 1-click multi-subreddit & keyword sweep for a specific Brand Vault entry
+router.post('/brand-sweep/:brandId', protect, async (req, res) => {
+  const userId = req.user.id;
+  const { brandId } = req.params;
+  try {
+    const sweepResult = await runBrandDomainSweep(userId, brandId);
+    return res.json({ message: `Brand sweep completed for ${sweepResult.brandName || sweepResult.domainUrl}`, sweepResult });
+  } catch (error) {
+    logger.error('Error running brand sweep', { error: error.message });
+    return res.status(500).json({ error: error.message || 'Brand sweep failed' });
+  }
+});
 // @desc    Start continuous 24/7 rotational sweeper
 router.post('/sweep/start', protect, async (req, res) => {
   const userId = req.user.id;
@@ -412,6 +424,93 @@ router.delete('/leads/clear-all', protect, async (req, res) => {
   } catch (error) {
     logger.error('Error clearing lead pipeline', { error: error.message });
     return res.status(500).json({ error: 'Failed to clear lead pipeline board' });
+  }
+});
+
+// @route   POST /api/agent/dm-agent/generate
+// @desc    Generate personalized human connection strategy and 3 DM variations
+router.post('/dm-agent/generate', protect, async (req, res) => {
+  const userId = req.user.id;
+  const {
+    leadId,
+    recipient,
+    postTitle,
+    postContent,
+    subreddit,
+    targetDomain = 'AlertCareLine.com',
+    psychologicalProfile,
+    tone = 'warm_peer',
+    customInstruction = '',
+  } = req.body;
+
+  try {
+    let resolvedRecipient = recipient;
+    let resolvedTitle = postTitle;
+    let resolvedContent = postContent;
+    let resolvedSubreddit = subreddit;
+    let resolvedDomain = targetDomain;
+    let resolvedProfile = psychologicalProfile;
+
+    // If leadId is provided, enrich with stored DB lead details
+    if (leadId) {
+      const isDbConnected = getIsConnected();
+      let lead = null;
+      if (isDbConnected) {
+        lead = await LeadAgentItem.findOne({ _id: leadId, userId });
+      } else {
+        const store = getMemoryStore();
+        lead = store.leadAgentItems?.find(l => (l.id === leadId || l._id === leadId) && l.userId === userId);
+      }
+
+      if (lead) {
+        resolvedRecipient = resolvedRecipient || lead.author;
+        resolvedTitle = resolvedTitle || lead.postTitle;
+        resolvedContent = resolvedContent || lead.commentQuote || lead.postSnippet;
+        resolvedSubreddit = resolvedSubreddit || lead.subreddit;
+        resolvedDomain = resolvedDomain || lead.targetDomain;
+        resolvedProfile = resolvedProfile || lead.psychologicalProfile;
+      }
+    }
+
+    if (!resolvedRecipient) {
+      return res.status(400).json({ error: 'Recipient username is required.' });
+    }
+
+    let userDmSettings = null;
+    const User = require('../models/User');
+    if (isDbConnected) {
+      const u = await User.findById(userId).select('agentSettings');
+      userDmSettings = u?.agentSettings?.dmAgent;
+    } else {
+      const store = getMemoryStore();
+      const u = store.users?.find(x => x.id === userId || x._id === userId);
+      userDmSettings = u?.agentSettings?.dmAgent;
+    }
+
+    const resolvedTone = tone || userDmSettings?.defaultTone || 'warm_peer';
+    const resolvedInstruction = customInstruction || userDmSettings?.customInstructions || '';
+
+    const result = await generateHumanDmResponseWithStrategy({
+      recipient: resolvedRecipient,
+      postTitle: resolvedTitle,
+      postContent: resolvedContent,
+      subreddit: resolvedSubreddit,
+      targetDomain: resolvedDomain,
+      psychologicalProfile: resolvedProfile,
+      tone: resolvedTone,
+      customInstruction: resolvedInstruction,
+    });
+
+    return res.json({
+      success: true,
+      recipient: resolvedRecipient,
+      targetDomain: resolvedDomain,
+      subreddit: resolvedSubreddit,
+      ...result,
+    });
+  } catch (error) {
+    logger.error('Error in DM Agent strategy generation', { error: error.message });
+    return res.status(500).json({ error: 'Failed to generate DM strategy: ' + error.message });
   }
 });
 

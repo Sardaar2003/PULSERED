@@ -1,0 +1,43 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]: PULSERED AIENTERPRISE PLATFORM
+    - generic [ref=e10]:
+      - button "Switch to Light Mode" [ref=e11] [cursor=pointer]
+      - generic [ref=e18]: Secure Social Intelligence Engine
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]: Admin-Controlled Access & Single Session Security
+      - heading "Deep Social Listening & Reddit Intelligence" [level=1] [ref=e25]
+      - paragraph [ref=e26]: Extract actionable community insights, sentiment breakdown, and market conversations with real-time semantic analysis and enterprise-grade multi-user governance.
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - heading "Admin Approval System" [level=4] [ref=e31]
+          - paragraph [ref=e32]: Only vetted members granted access by administrators can enter.
+        - generic [ref=e33]:
+          - heading "Single Active Session" [level=4] [ref=e37]
+          - paragraph [ref=e38]: Prevents concurrent logins across multiple devices/tabs.
+        - generic [ref=e39]:
+          - heading "Keyword Sentiment" [level=4] [ref=e41]
+          - paragraph [ref=e42]: Automated positive, neutral, and negative text polarities.
+        - generic [ref=e43]:
+          - heading "Resilient Data Engine" [level=4] [ref=e46]
+          - paragraph [ref=e47]: High-capacity crawling with automatic live fallback.
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - heading "Sign In to Workspace" [level=2] [ref=e50]
+        - paragraph [ref=e51]: Enter your credentials to enter the platform
+      - generic [ref=e52]:
+        - button "Sign In" [ref=e53] [cursor=pointer]
+        - button "Register Account" [ref=e54] [cursor=pointer]
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - generic [ref=e57]: Email Address
+          - textbox "alex@company.com" [ref=e59]
+        - generic [ref=e60]:
+          - generic [ref=e61]: Password
+          - generic [ref=e62]:
+            - textbox "••••••••" [ref=e63]
+            - button [ref=e64] [cursor=pointer]
+        - button "Sign In to Workspace" [ref=e68] [cursor=pointer]
+      - paragraph [ref=e69]: Protected by PulseRed Enterprise Single Session Governance & MongoDB Atlas Encryption.
+  - contentinfo [ref=e70]: © 2026 PulseRed Social Intelligence Platform • All Rights Reserved

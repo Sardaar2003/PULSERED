@@ -71,8 +71,42 @@ const leadAgentItemSchema = new mongoose.Schema({
   },
   stage: {
     type: String,
-    enum: ['New', 'Engaged', 'Qualified', 'Trial', 'Paid'],
-    default: 'New',
+    enum: [
+      'New Leads',
+      'Qualified',
+      'Outreach Drafted',
+      'Engaged / Replied',
+      'Converted / Closed',
+      'New',
+      'Engaged',
+      'Trial',
+      'Paid',
+    ],
+    default: 'New Leads',
+  },
+  psychologicalProfile: {
+    archetype: { type: String, default: 'Pragmatic Buyer' },
+    emotionalMindset: { type: String, default: 'Seeking reliable solution with transparent terms' },
+    corePainPoint: { type: String, default: '' },
+    whatIsImportant: [{ type: String }],
+    decisionDrivers: { type: String, default: 'Cost efficiency, reliability, and ease of deployment' },
+    riskLevel: { type: String, default: 'Low Risk' },
+  },
+  isSolvedOrAnswered: {
+    type: Boolean,
+    default: false,
+  },
+  solvedEvidence: {
+    type: String,
+    default: '',
+  },
+  threadCommentCount: {
+    type: Number,
+    default: 0,
+  },
+  disqualified: {
+    type: Boolean,
+    default: false,
   },
   extractedPainPoint: {
     type: String,
@@ -87,6 +121,16 @@ const leadAgentItemSchema = new mongoose.Schema({
     competitorVulnerabilities: [{ type: String }],
     positioningPitch: { type: String, default: '' },
     adContentHook: { type: String, default: '' },
+  },
+  // --- Marketer 360° Prospect Behavioral Audit (Do's & Don'ts) ---
+  prospectBehavioralAudit: {
+    prospectTone: { type: String, default: 'Direct & Pragmatic' },
+    buyerExpectation: { type: String, default: 'Seeks technical validation and fast ROI' },
+    doList: [{ type: String }],
+    dontList: [{ type: String }],
+    bestApproachPitch: { type: String, default: '' },
+    riskLevel: { type: String, default: 'Low Risk' },
+    userHistorySummary: { type: String, default: '' },
   },
   // --- Messaging Agent (HIL) Fields ---
   openerDraft: {
@@ -132,6 +176,19 @@ const leadAgentItemSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  // --- Multi-turn WhatsApp-style Conversation History ---
+  conversation: [
+    {
+      messageId: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
+      sender: { type: String, enum: ['lead', 'user', 'agent'], required: true },
+      channel: { type: String, enum: ['reddit_dm', 'email'], default: 'reddit_dm' },
+      content: { type: String, required: true },
+      timestamp: { type: Date, default: Date.now },
+      status: { type: String, enum: ['sent', 'delivered', 'read', 'pending_approval'], default: 'delivered' },
+      aiSuggestedReply: { type: String, default: '' },
+      aiStrategyRationale: { type: String, default: '' },
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

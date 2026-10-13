@@ -14,7 +14,10 @@ const outreachRoutes = require('./routes/outreachRoutes');
 const leadAgentRoutes = require('./routes/leadAgentRoutes');
 const brandDomainRoutes = require('./routes/brandDomainRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
-
+const redditAccountRoutes = require('./routes/redditAccountRoutes');
+const emailAgentRoutes = require('./routes/emailAgentRoutes');
+const agentSettingsRoutes = require('./routes/agentSettingsRoutes');
+const inboxRoutes = require('./routes/inboxRoutes');
 
 const app = express();
 
@@ -42,7 +45,10 @@ app.use('/api/outreach', outreachRoutes);
 app.use('/api/agent', leadAgentRoutes);
 app.use('/api/brand-domains', brandDomainRoutes);
 app.use('/api/analytics', analyticsRoutes);
-
+app.use('/api/reddit-account', redditAccountRoutes);
+app.use('/api/email-agent', emailAgentRoutes);
+app.use('/api/agent-settings', agentSettingsRoutes);
+app.use('/api/inbox', inboxRoutes);
 
 // Healthcheck Route
 app.get('/api/health', (req, res) => {

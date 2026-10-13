@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Plus, Trash2, X } from 'lucide-react';
+import { Globe, Plus, Trash2, X, Sparkles, Search, Sliders, ShieldAlert, Tag, Zap } from 'lucide-react';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api');
@@ -13,9 +13,22 @@ export const BrandVaultModal = ({ isOpen, onClose, onDomainsUpdated }) => {
   const [domainUrl, setDomainUrl] = useState('');
   const [brandName, setBrandName] = useState('');
   const [specialization, setSpecialization] = useState('');
-  const [targetSubreddits, setTargetSubreddits] = useState('homesecurity, SaaS, startups');
-  const [targetKeywords, setTargetKeywords] = useState('affordable security cameras homeowners, home security system compare, adt alternatives');
-  const [writingRules, setWritingRules] = useState('Tone: Helpful Peer, Keep DMs under 40 words');
+  const [offerDescription, setOfferDescription] = useState('');
+
+  // Array Tag States
+  const [targetKeywords, setTargetKeywords] = useState([]);
+  const [targetSubreddits, setTargetSubreddits] = useState([]);
+  const [negativeKeywords, setNegativeKeywords] = useState([]);
+  const [writingRules, setWritingRules] = useState([]);
+
+  // Inline Inputs
+  const [newKwInput, setNewKwInput] = useState('');
+  const [newSubInput, setNewSubInput] = useState('');
+  const [newNegInput, setNewNegInput] = useState('');
+  const [newRuleInput, setNewRuleInput] = useState('');
+
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiConfidence, setAiConfidence] = useState(null);
 
   const fetchDomains = async () => {
     setLoading(true);
@@ -39,28 +52,62 @@ export const BrandVaultModal = ({ isOpen, onClose, onDomainsUpdated }) => {
     }
   }, [isOpen]);
 
+  const handleAutoGenerate = async () => {
+    if (!brandName && !specialization && !offerDescription) {
+      alert('Please fill in Brand Name or Offer Description first so AI can analyze target buyers.');
+      return;
+    }
+    setIsGeneratingAi(true);
+    try {
+      const token = localStorage.getItem('pulsered_token');
+      const res = await axios.post(`${API_BASE_URL}/brand-domains/generate-blueprint`, {
+        onboardingPathway: 'pitch_brief',
+        domainUrl,
+        brandName,
+        pitchBrief: `${brandName} - ${specialization}. ${offerDescription}`,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const blueprint = res.data?.blueprint;
+      if (blueprint) {
+        if (blueprint.targetKeywords?.length) setTargetKeywords(blueprint.targetKeywords);
+        if (blueprint.targetSubreddits?.length) setTargetSubreddits(blueprint.targetSubreddits);
+        if (blueprint.negativeKeywords?.length) setNegativeKeywords(blueprint.negativeKeywords);
+        setWritingRules(['Tone: Helpful Expert', 'Keep DMs under 40 words']);
+        setAiConfidence(blueprint.confidenceScore || 92);
+      }
+    } catch (err) {
+      console.error('Failed to auto generate AI blueprint:', err);
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
 
   const handleAddDomain = async (e) => {
     e.preventDefault();
-    if (!domainUrl || !brandName || !specialization) return;
+    if (!brandName || (!specialization && !offerDescription)) return;
 
     try {
       const token = localStorage.getItem('pulsered_token');
       await axios.post(
         `${API_BASE_URL}/brand-domains`,
         {
-          domainUrl,
+          domainUrl: domainUrl || 'Custom Profile',
           brandName,
-          specialization,
-          targetSubreddits: targetSubreddits.split(',').map(s => s.trim()).filter(Boolean),
-          targetKeywords: targetKeywords.split(',').map(k => k.trim()).filter(Boolean),
-          writingRules: writingRules.split(',').map(r => r.trim()).filter(Boolean),
+          specialization: offerDescription || specialization,
+          targetSubreddits,
+          targetKeywords,
+          negativeKeywords,
+          writingRules,
+          confidenceScore: aiConfidence || 90,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDomainUrl('');
       setBrandName('');
       setSpecialization('');
+      setOfferDescription('');
       setShowAddForm(false);
       fetchDomains();
     } catch (err) {
